@@ -1,0 +1,145 @@
+name: YDM EDOPro YDM KCGCore Windows x64 build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ydm/official-first-kcg-rebuild
+    paths:
+      - ".github/workflows/ydm-kcgcore-x64.yml"
+      - "gframe/**"
+      - "travis/**"
+      - "ocgcore/**"
+      - "premake5.lua"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ydm-kcgcore-x64-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-2022
+    env:
+      TRAVIS_OS_NAME: windows
+      TARGET_OS: windows
+      ARCH: x64
+      BUILD_CONFIG: Release
+      VS_GEN: vs2022
+      SERVER_URL: 127.0.0.1
+      DXSDK_DIR: C:/d3d9sdk/
+      FFMPEG_ROOT: ${{ github.workspace }}/ffmpeg
+    steps:
+      - name: Checkout current EDOPro client source
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 1
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Install client build prerequisites
+        shell: bash
+        run: |
+          ./travis/install-local-dependencies.sh windows
+          ./travis/get-windows-d3d9sdk.sh
+          ./travis/install-premake5.sh
+
+      - name: Install x64 client dependencies
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP "ydm-vcpkg"
+          git clone --depth 1 https://github.com/microsoft/vcpkg.git $root
+          "VCPKG_ROOT=$root" | Out-File -FilePath $env:GITHUB_ENV -Append
+          & "$root\bootstrap-vcpkg.bat" -disableMetrics
+          & "$root\vcpkg.exe" install fmt curl freetype sqlite3 libevent libgit2 libssh2 openssl libpng bzip2 zlib libjpeg-turbo nlohmann-json openal-soft libflac libvorbis --triplet x64-windows-static
+          if ($LASTEXITCODE -ne 0) { throw "Static client dependencies failed to install" }
+          & "$root\vcpkg.exe" install ffmpeg --triplet x64-windows
+          if ($LASTEXITCODE -ne 0) { throw "FFmpeg dependencies failed to install" }
+          & "$root\vcpkg.exe" integrate install
+
+      - name: Stage FFmpeg headers, import libraries and runtime DLLs
+        shell: pwsh
+        run: |
+          $root = "$env:VCPKG_ROOT/installed/x64-windows"
+          New-Item -ItemType Directory -Force -Path "ffmpeg/include", "ffmpeg/lib", "ffmpeg/bin" | Out-Null
+          foreach ($name in @("libavcodec", "libavdevice", "libavfilter", "libavformat", "libavutil", "libswresample", "libswscale")) {
+            Copy-Item "$root/include/$name" "ffmpeg/include" -Recurse -Force
+          }
+          foreach ($name in @("avcodec.lib", "avdevice.lib", "avfilter.lib", "avformat.lib", "avutil.lib", "swresample.lib", "swscale.lib")) {
+            Copy-Item "$root/lib/$name" "ffmpeg/lib" -Force
+          }
+          Get-ChildItem "$root/bin/*.dll" | Copy-Item -Destination "ffmpeg/bin" -Force
+          if (-not (Test-Path "ffmpeg/include/libavcodec/avcodec.h")) { throw "FFmpeg headers missing" }
+          if (-not (Test-Path "ffmpeg/lib/avcodec.lib")) { throw "FFmpeg import library missing" }
+
+      - name: Stage SFML audio dependencies
+        shell: pwsh
+        run: |
+          $root = "$env:VCPKG_ROOT/installed/x64-windows-static"
+          New-Item -ItemType Directory -Force -Path "audio/include", "audio/lib" | Out-Null
+          foreach ($name in @("AL", "FLAC", "vorbis", "ogg")) {
+            Copy-Item "$root/include/$name" "audio/include" -Recurse -Force
+          }
+          foreach ($name in @("FLAC.lib", "vorbisfile.lib", "vorbis.lib", "ogg.lib", "OpenAL32.lib")) {
+            Copy-Item "$root/lib/$name" "audio/lib" -Force
+            if (-not (Test-Path "audio/lib/$name")) { throw "Missing audio library: $name" }
+          }
+          if (-not (Test-Path "audio/include/AL/al.h")) { throw "OpenAL headers missing" }
+          if (-not (Test-Path "audio/include/FLAC/stream_decoder.h")) { throw "FLAC headers missing" }
+          if (-not (Test-Path "audio/include/vorbis/vorbisfile.h")) { throw "Vorbis headers missing" }
+
+      - name: Fetch pinned KCGCore and its Lua submodule
+        shell: pwsh
+        run: |
+          git clone --no-checkout https://github.com/Yugioh-Duel-Monsters/ocgcore-KCG.git ocgcore
+          git -C ocgcore checkout 6525257653727ebba86cd371f570bc1dadf19d8d
+          git -C ocgcore submodule update --init --recursive
+          if ((git -C ocgcore rev-parse HEAD).Trim() -ne "7c2a7bdc18bba102ef72097093e52a4c31189a26") {
+            throw "KCGCore checkout did not match the pinned revision"
+          }
+
+      - name: Build pinned KCGCore x64 DLL
+        shell: pwsh
+        run: |
+          Push-Location ocgcore
+          & ..\premake5.exe vs2022
+          if ($LASTEXITCODE -ne 0) { throw "KCGCore project generation failed" }
+          & msbuild.exe -m -p:Configuration=Release -p:Platform=x64 .\build\ocgcore.sln -t:ocgcoreshared -verbosity:minimal -p:EchoOff=true
+          if ($LASTEXITCODE -ne 0) { throw "KCGCore x64 build failed" }
+          Pop-Location
+          New-Item -ItemType Directory -Force -Path "bin/x64/release" | Out-Null
+          Copy-Item "ocgcore/bin/x64/release/ocgcore.dll" "bin/x64/release/ocgcore.dll" -Force
+          if (-not (Test-Path "bin/x64/release/ocgcore.dll")) { throw "KCGCore DLL was not produced" }
+
+      - name: Generate current EDOPro x64 project
+        shell: bash
+        run: |
+          ./premake5 vs2022 --architecture=x64 --sound=miniaudio,sfml --no-joystick=true
+
+      - name: Build current EDOPro client x64
+        shell: pwsh
+        run: |
+          & msbuild.exe -m -p:Configuration=Release -p:Platform=x64 .\build\ygo.sln -t:ygoprodll -verbosity:minimal -p:EchoOff=true
+          if ($LASTEXITCODE -ne 0) { throw "EDOPro x64 client build failed" }
+          if (-not (Test-Path "bin/x64/release/ygoprodll.exe")) { throw "EDOPro x64 executable missing" }
+
+      - name: Assemble minimal client and core package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path deploy | Out-Null
+          Copy-Item "bin/x64/release/ygoprodll.exe" "deploy/ygoprodll.exe" -Force
+          Copy-Item "bin/x64/release/ocgcore.dll" "deploy/ocgcore.dll" -Force
+          if (-not (Test-Path "deploy/ygoprodll.exe")) { throw "Client executable missing" }
+          if (-not (Test-Path "deploy/ocgcore.dll")) { throw "Core DLL missing" }
+          if ((Get-ChildItem deploy -File).Count -ne 2) { throw "Package must contain exactly the client and core DLL" }
+
+      - name: Upload Windows x64 client and core
+        uses: actions/upload-artifact@v4
+        with:
+          name: YDM-EDOPro-KCGCore-Windows-x64
+          path: deploy/*
+          if-no-files-found: error
