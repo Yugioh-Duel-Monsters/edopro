@@ -4091,7 +4091,7 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
 		if(addtotext && value > 0) {
 			auto append_desc = [&](uint64_t desc) {
 				if(!desc) return;
-				const auto description = gDataManager->GetDesc(desc, mainGame->dInfo.compat_mode);
+				const auto description = epro::format(L"{}", gDataManager->GetDesc(desc, mainGame->dInfo.compat_mode));
 				if(replacetext)
 					text.append(epro::format(description, gDataManager->GetName(replacetext).data()));
 				else
