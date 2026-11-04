@@ -3042,6 +3042,86 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
 		}
 		return true;
 	}
+	case MSG_PICCHANGE: {
+		const auto code = BufferIO::Read<uint32_t>(pbuf);
+		CoreUtils::loc_info current = CoreUtils::ReadLocInfo(pbuf, mainGame->dInfo.compat_mode);
+		current.controler = mainGame->LocalPlayer(current.controler);
+		ClientCard* card = nullptr;
+		if(current.location & LOCATION_OVERLAY) {
+			ClientCard* host = mainGame->dField.GetCard(current.controler,
+				current.location & (~LOCATION_OVERLAY) & 0xff, current.sequence);
+			if(host && current.position < host->overlayed.size())
+				card = host->overlayed[current.position];
+		} else {
+			card = mainGame->dField.GetCard(current.controler, current.location, current.sequence);
+		}
+		if(card)
+			card->piccode = code;
+		return true;
+	}
+	case MSG_CHANGE: {
+		const auto code = BufferIO::Read<uint32_t>(pbuf);
+		CoreUtils::loc_info current = CoreUtils::ReadLocInfo(pbuf, mainGame->dInfo.compat_mode);
+		const auto setnames = BufferIO::Read<uint64_t>(pbuf);
+		const auto type = BufferIO::Read<uint32_t>(pbuf);
+		const auto level = BufferIO::Read<int32_t>(pbuf);
+		const auto attribute = BufferIO::Read<uint32_t>(pbuf);
+		const auto race = BufferIO::Read<uint64_t>(pbuf);
+		const auto attack = BufferIO::Read<int32_t>(pbuf);
+		const auto defense = BufferIO::Read<int32_t>(pbuf);
+		const auto lscale = BufferIO::Read<uint32_t>(pbuf);
+		const auto rscale = BufferIO::Read<uint32_t>(pbuf);
+		const auto link_marker = BufferIO::Read<uint32_t>(pbuf);
+		const auto partchange = BufferIO::Read<bool>(pbuf);
+		const auto realcode = BufferIO::Read<uint32_t>(pbuf);
+		const auto effcode = BufferIO::Read<uint32_t>(pbuf);
+		const auto namecode = BufferIO::Read<uint32_t>(pbuf);
+		// KCGCore appends the original-card location when an entity has a real-card source.
+		if(!partchange && realcode)
+			(void)CoreUtils::ReadLocInfo(pbuf, mainGame->dInfo.compat_mode);
+		current.controler = mainGame->LocalPlayer(current.controler);
+		ClientCard* card = nullptr;
+		if(current.location & LOCATION_OVERLAY) {
+			ClientCard* host = mainGame->dField.GetCard(current.controler,
+				current.location & (~LOCATION_OVERLAY) & 0xff, current.sequence);
+			if(host && current.position < host->overlayed.size())
+				card = host->overlayed[current.position];
+		} else {
+			card = mainGame->dField.GetCard(current.controler, current.location, current.sequence);
+		}
+		if(card) {
+			card->code = code;
+			card->is_change = true;
+			card->rsetnames = setnames;
+			card->rtype = type;
+			card->rlevel = level;
+			card->rattribute = attribute;
+			card->rrace = race;
+			card->rattack = attack;
+			card->rdefense = defense;
+			card->rlscale = lscale;
+			card->rrscale = rscale;
+			card->rlink_marker = link_marker;
+			card->piccode = 0;
+			card->type = type;
+			card->level = level;
+			card->attribute = attribute;
+			card->race = race;
+			card->attack = attack;
+			card->defense = defense;
+			card->lscale = lscale;
+			card->rscale = rscale;
+			card->link_marker = link_marker;
+			card->lvstring = epro::format(L"L{}", level);
+			card->atkstring = attack < 0 ? L"?" : epro::to_wstring(attack);
+			card->defstring = defense < 0 ? L"?" : epro::to_wstring(defense);
+			card->lscstring = epro::to_wstring(lscale);
+			card->rscstring = epro::to_wstring(rscale);
+		}
+		(void)effcode;
+		(void)namecode;
+		return true;
+	}
 	case MSG_MOVE: {
 		const auto code = BufferIO::Read<uint32_t>(pbuf);
 		CoreUtils::loc_info previous = CoreUtils::ReadLocInfo(pbuf, mainGame->dInfo.compat_mode);
