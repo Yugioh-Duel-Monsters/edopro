@@ -21,6 +21,18 @@
 #include "discord_wrapper.h"
 #include "windbot_panel.h"
 #include "ocgapi_types.h"
+/////kdiy/////
+#include "client_card.h"
+#include "network.h"
+extern "C" {
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libswscale/swscale.h>
+#include <libswresample/swresample.h>
+#include <libavutil/opt.h>
+}
+#include <sfAudio/Audio.hpp>
+/////kdiy/////
 #include "dllinterface.h"
 
 struct unzip_payload;
@@ -127,11 +139,83 @@ struct FadingUnit {
 	irr::core::vector2di fadingDest;
 	bool wasEnabled;
 };
+/////kdiy/////
+class Mode {
+public:
+	struct ModeText {//the text of mode meun
+		std::wstring name;
+		std::wstring des;
+	};
+	struct ModePloat {//the ploat text of mode-story
+		uint8_t index;
+		int control = 0;
+        uint8_t icon = 0;
+		std::wstring title = L"";
+		std::wstring ploat = L"";
+        bool isStartEvent = true;
+        bool isStartDuel = false;
+        bool music = false;
+        bool isWinDuel = false;
+        bool isLoseDuel = false;
+        bool sextramonster = false;
+        bool smonster = false;
+        bool activate = false;
+        bool attackeff = false;
+        uint32_t code = 0;
+	};
+	std::vector<ModeText>* modeTexts;//vector modetext
+	std::vector<ModePloat>* modePloats[CHAPTER];//vector modeploat
+	std::vector<WindBot> bots;//all mode will load windbots from this
+    std::map<uint8_t, std::wstring> playerNames;
+	std::map<uint8_t, std::vector<std::wstring>> aiNames;//player+bot names when duel start
+    std::map<uint8_t, std::wstring> aideck;
+    std::map<uint8_t, std::vector<uint8_t>> iconlist;
+    std::map<uint8_t, uint8_t> storyrule;
+    std::map<uint8_t, bool> rush;
+    std::map<uint8_t, int32_t> team1;
+    std::map<uint8_t, int32_t> team2;
+    std::map<uint8_t, bool> relay;
+    std::map<uint8_t, uint32_t> lua;
+	int modeIndex;//decide to play what kind of mode rule,from meun-list getSelected
+	bool isMode;//the duel is mode?
+	bool isPlot;//is showing ploat, ignore mouse/keyboard inputs
+	bool isStartEvent;//ploating, locking flow, allow left mouse click notify_one() to skip continuous ploat
+	bool isStartDuel, isDuelEnd, isStoryStart;
+	bool flag_100000155;//card 100000155 play sound
+	uint8_t rule;//the rule of duel,zcg|story......
+    uint8_t chapter;//story chapter
+	uint8_t plotStep;//0: initial ploat, 1: normal ploat, 2: stop ploat
+ 	uint8_t plotIndex;//the index of plot,decide to set text plot
+	uint8_t character[6] = { 0,0,0,0,0,0 };
+	void InitializeMode();
+	void DestoryMode();
+	void RefreshEntertainmentPlay(std::vector<ModeText>* modeTexts);
+	void RefreshControlState(uint8_t state);
+	void SetControlState(uint8_t index);
+	void ModePlayerReady(bool isAi);
+	void SetRule(uint8_t index);
+	bool LoadWindBot(int port, epro::wstringview pass);
+	bool IsModeBot(std::wstring mode);
+	void NextPlot(uint8_t step = 0, uint32_t code = 0); //step: plotStep, index: ploat.json index
+    void PlayNextPlot(uint32_t code);
+	std::wstring GetPloat(uint32_t code = 0);
+	Mode();
+	void LoadJsonInfo();
+	~Mode();
+private:
+	void SetCurrentDeck();
+	bool LoadJson(epro::path_string path, uint8_t index, uint8_t chapter = 0);
+};
+/////kdiy/////
 
 struct info_panel_elements {
 	//card image
-	irr::gui::IGUIStaticText* wCardImg;
-	irr::gui::IGUIImage* imgCard;
+	/////kdiy/////
+	// irr::gui::IGUIStaticText* wCardImg;
+	//irr::gui::IGUIImage* imgCard;
+	irr::gui::CGUIImageButton* imgCard;
+	irr::gui::CGUIImageButton* imgCard2[5];
+	/////kdiy/////
 	//infos
 	int infosExpanded; //0: not expanded, 1: expanded and to be shown as expanded, 2: expanded but not to be shown as expanded
 	irr::gui::IGUITabControl* wInfos;
@@ -162,6 +246,13 @@ struct main_menu_panel_elements {
 	int mainMenuLeftX;
 	int mainMenuRightX;
 	irr::gui::IGUIWindow* wMainMenu;
+	/////kdiy/////////
+	irr::gui::IGUIWindow* wQQ;
+	irr::gui::CGUIImageButton* btnQQ;
+	irr::gui::IGUIButton* btnQQ2;
+	irr::gui::IGUIButton* btnQQ22;
+	irr::gui::IGUIButton* btnSettings2;
+	/////kdiy/////////
 	irr::gui::IGUIWindow* wCommitsLog;
 	irr::gui::IGUIContextMenu* mTopMenu;
 	irr::gui::IGUIContextMenu* mRepositoriesInfo;
@@ -222,7 +313,11 @@ struct host_creation_panel_elements {
 	irr::gui::IGUIEditBox* ebServerPass;
 	irr::gui::IGUIButton* btnRuleCards;
 	irr::gui::IGUIWindow* wRules;
-	irr::gui::IGUICheckBox* chkRules[13];
+	/////kdiy///////
+	//irr::gui::IGUICheckBox* chkRules[13];
+	irr::gui::IGUIButton* btnNoSwapMode;
+	irr::gui::IGUICheckBox* chkRules[14];
+	/////kdiy///////
 	irr::gui::IGUIButton* btnRulesOK;
 	irr::gui::IGUIComboBox* cbDuelRule;
 	irr::gui::IGUICheckBox* chkCustomRules[7+12+8+5];
@@ -239,6 +334,53 @@ struct host_creation_panel_elements {
 	irr::gui::IGUIEditBox* ebHostNotes;
 	irr::gui::IGUIStaticText* stVersus;
 	irr::gui::IGUIStaticText* stBestof;
+	///////kdiy//////////
+	irr::gui::IGUICheckBox* chkOppLP;
+	irr::gui::IGUICheckBox* chkOppLP2;
+	irr::gui::IGUICheckBox* chkOppHand;
+	irr::gui::IGUICheckBox* chkOppHand2;
+	irr::gui::IGUIWindow* wCreateHost2;
+	irr::gui::IGUICheckBox* chkdefaultlocal;
+	irr::gui::IGUICheckBox* chkAI;
+	irr::gui::IGUIComboBox* cbHostLFList2;
+	irr::gui::IGUIComboBox* cbRule2;
+	irr::gui::IGUIEditBox* ebTimeLimit2;
+	irr::gui::IGUIEditBox* ebStartLP2;
+	irr::gui::IGUIEditBox* ebStartHand2;
+	irr::gui::IGUIEditBox* ebDrawCount2;
+	irr::gui::IGUIEditBox* ebJoinPass2;
+	irr::gui::IGUIComboBox* cbDuelRule2;
+	irr::gui::IGUICheckBox* chkNoCheckDeckContent2;
+	irr::gui::IGUICheckBox* chkNoShuffleDeck2;
+	irr::gui::IGUICheckBox* chkNoLFlist2;
+	irr::gui::IGUICheckBox* chkTag;
+	irr::gui::IGUICheckBox* chkMatch;
+	irr::gui::IGUIButton* btnSimpleJoinHost;
+	irr::gui::IGUIButton* btnHostConfirm2;
+	irr::gui::IGUIButton* btnHostCancel2;
+	uint8_t character[6] = {0,0,0,0,0,0};
+	uint8_t choose_player = 0; //0-5th players
+	irr::gui::CGUIImageButton* btnCharacter;
+	irr::gui::CGUIImageButton* btnCharacterSelect;
+	irr::gui::CGUIImageButton* btnCharacterSelect2;
+	irr::gui::CGUIImageButton* btnsubCharacterSelect[5];
+    irr::gui::IGUIWindow* wCharacterReplay;
+	irr::gui::IGUIButton* btnCharacterSelect_replay;
+	irr::gui::CGUIImageButton* btnCharacter_replay;
+	irr::gui::CGUIImageButton* btnCharacterSelect1_replay;
+	irr::gui::CGUIImageButton* btnCharacterSelect2_replay;
+	irr::gui::CGUIImageButton* btnsubCharacterSelect_replay[5];
+    irr::gui::IGUIButton* btnCharacterSelect_replayclose;
+    irr::gui::IGUIButton* btnCharacterSelect_replayreset[6];
+    irr::gui::IGUIComboBox* ebCharacter_replay[6];
+    irr::gui::IGUIEditBox* ebName_replay[6];
+	irr::gui::IGUIStaticText* stCharacterReplay;
+	irr::gui::IGUIWindow* wAvatar[2];
+	irr::gui::CGUIImageButton* avatarbutton[2];
+	irr::gui::IGUIButton* cardbutton[3];
+    int avataricon1 = 0;
+    int avataricon2 = 0;
+	///////kdiy//////////
 	//deck options
 	irr::gui::IGUICheckBox* chkNoCheckDeckContentSecondary;
 	irr::gui::IGUICheckBox* chkNoCheckDeckSizeSecondary;
@@ -270,6 +412,29 @@ struct host_panel_elements {
 	irr::gui::IGUIStaticText* stHostPrepRuleL;
 	irr::gui::IGUIStaticText* stHostPrepOB;
 	irr::gui::IGUIStaticText* stDeckSelect;
+	//////////kdiy/////////
+	irr::gui::IGUIButton* selectedcard[5];
+    irr::gui::IGUIComboBox* ebCharacter[6];
+	irr::gui::IGUIComboBox* ebCharacterDeck;
+    irr::gui::IGUIComboBox* cbDBDecks2;
+    irr::gui::IGUIComboBox* cbDBDecks22;
+	irr::gui::IGUICheckBox* chkHandTestOpponentDeck;
+    irr::gui::IGUIComboBox* cbHandTestDecks;
+    irr::gui::IGUIComboBox* cbHandTestDecks2;
+	irr::gui::CGUIImageButton* icon[6];
+    irr::gui::CGUIImageButton* icon2[6];
+	irr::gui::IGUIComboBox* cbDeck2Select;
+    irr::gui::IGUIButton* btnPicDL;
+	irr::gui::IGUIButton* btnMovieDL;
+    irr::gui::IGUIButton* btnSoundDL;
+	irr::gui::IGUIButton* btnIntro;
+	irr::gui::IGUIButton* btnTut;
+	irr::gui::IGUIButton* btnTut2;
+	irr::gui::IGUIButton* btHome;
+	irr::gui::IGUIButton* btnFolder;
+    irr::gui::IGUIStaticText* stpics;
+	irr::gui::IGUIComboBox* cbpics;
+	//////////kdiy/////////
 	irr::gui::IGUIButton* btnHostPrepReady;
 	irr::gui::IGUIButton* btnHostPrepNotReady;
 	irr::gui::IGUIButton* btnHostPrepStart;
@@ -302,6 +467,28 @@ struct puzzle_panel_elements {
 	irr::gui::IGUIButton* btnOpenSinglePlay;
 	irr::gui::IGUIButton* btnShareSinglePlay;
 	irr::gui::IGUIButton* btnSinglePlayCancel;
+	//////////kdiy/////////
+	Mode* mode = new Mode();
+	irr::gui::IGUICheckBox* chkEntertainmentPrepReady;
+	irr::gui::IGUICheckBox* chkEntertainmentMode_1Check;
+	irr::gui::IGUIComboBox* cbEntertainmentMode_1Bot;
+	irr::gui::IGUIWindow* wEntertainmentPlay;
+	irr::gui::CGUIFileSelectListBox* lstEntertainmentPlayList;
+	irr::gui::IGUIStaticText* stEntertainmentPlayInfo;
+	irr::gui::IGUIButton* btnEntertainmentMode;
+	irr::gui::IGUIButton* btnEntertainmentStartGame;
+	irr::gui::IGUIButton* btnEntertainmentExitGame;
+
+	irr::gui::IGUIWindow* wBody;
+	irr::gui::CGUIImageButton* btnBody;
+
+	irr::gui::IGUIWindow* wPloat;
+	irr::gui::IGUIStaticText* stPloatInfo;
+	irr::gui::IGUIButton* btnPloat;
+
+	irr::gui::IGUIWindow* wChPloatBody[2];
+	irr::gui::IGUIStaticText* stChPloatInfo[2];
+    //////////kdiy/////////
 };
 
 struct deck_edit_page_elements {
@@ -380,6 +567,9 @@ struct server_lobby_page_elements {
 	irr::gui::IGUITable* roomListTable;
 	irr::gui::IGUIStaticText* wRoomListPlaceholder;
 	irr::gui::IGUIComboBox* serverChoice;
+	/////kdiy/////////
+	irr::gui::IGUIComboBox* serverChoice2;
+	/////kdiy/////////
 	irr::gui::IGUIEditBox* ebNickNameOnline;
 	irr::gui::IGUIButton* btnCreateHost2;
 	irr::gui::IGUIComboBox* cbFilterRule;
@@ -441,6 +631,12 @@ struct game_field_elements {
 	//card display
 	irr::gui::IGUIWindow* wCardDisplay;
 	irr::gui::CGUIImageButton* btnCardDisplay[5];
+	/////kdiy///////
+	irr::gui::CGUIImageButton* btnPSAU2[5];
+	irr::gui::CGUIImageButton* btnPSDU2[5];
+	irr::gui::CGUIImageButton* btnCardSelect2[5][5];
+	irr::gui::CGUIImageButton* btnCardDisplay2[5][5];
+	/////kdiy///////
 	irr::gui::IGUIStaticText* stDisplayPos[5];
 	irr::gui::IGUIScrollBar* scrDisplayList;
 	irr::gui::IGUIButton* btnDisplayOK;
@@ -455,7 +651,10 @@ struct game_field_elements {
 	irr::gui::IGUIButton* btnANCardOK;
 	//announce attribute
 	irr::gui::IGUIWindow* wANAttribute;
-	irr::gui::IGUICheckBox* chkAttribute[7];
+	/////zdiy/////
+	//irr::gui::IGUICheckBox* chkAttribute[7];
+	irr::gui::IGUICheckBox* chkAttribute[8];
+	/////zdiy/////
 	//announce race
 	irr::gui::IGUIWindow* wANRace;
 	irr::gui::IGUICheckBox* chkRace[64];
@@ -485,7 +684,10 @@ struct game_field_elements {
 	irr::gui::IGUIButton* btnM2;
 	irr::gui::IGUIButton* btnEP;
 	//replay control
-	irr::gui::IGUIStaticText* wReplayControl;
+	/////kdiy///////
+	//irr::gui::IGUIStaticText* wReplayControl;
+	irr::gui::IGUIWindow* wReplayControl;
+	/////kdiy///////
 	irr::gui::IGUIButton* btnReplayStart;
 	irr::gui::IGUIButton* btnReplayPause;
 	irr::gui::IGUIButton* btnReplayStep;
@@ -520,7 +722,20 @@ public:
 #endif
 	bool MainLoop();
 	bool ApplySkin(const epro::path_string& skin, bool reload = false, bool firstrun = false);
-	void RefreshDeck(irr::gui::IGUIComboBox* cbDeck);
+	////////kdiy////////
+	//void RefreshDeck(irr::gui::IGUIComboBox* cbDeck);
+    void RefreshDeck();
+	void RefreshDeck(irr::gui::IGUIComboBox* cbDeck, bool refresh_folder=false);
+	void* ReadCardDataToCore();
+	void ReloadCBpic();
+	bool moviecheck(uint8_t cat = 5, bool initial = false);
+	bool chantcheck(bool initial = false);
+	void charactcomboselect(uint8_t player, int box, int sel); //box: 1=ebCharacter, 2= ebCharacter_replay, 3= ebCharacterDeck
+    std::vector<std::wstring>& GetPlayerReplayNames();
+	int bodycharacter[2] = { 0,0 };
+	int cutincharacter[2][3] = { {0,0,0},{0,0,0} }; //[3]: damage, advantage, surprise
+	int lpcharacter[2] = { 0,0 };
+	////////kdiy////////
 	void RefreshLFLists();
 	void RefreshAiDecks();
 	void RefreshReplay();
@@ -531,7 +746,10 @@ public:
 	void DrawCards();
 	void DrawCard(ClientCard* pcard);
 	void DrawMisc();
-	void DrawStatus(ClientCard* pcard);
+	//kidy///////
+	//void DrawStatus(ClientCard* pcard);
+	void DrawStatus(ClientCard* pcard, bool attackonly = false);
+	//kidy///////
 	void DrawPendScale(ClientCard* pcard);
 	void DrawStackIndicator(epro::wstringview text, const Materials::QuadVertex v, bool opponent);
 	void DrawGUI();
@@ -540,8 +758,14 @@ public:
 	void ShowElement(irr::gui::IGUIElement* element, int autoframe = 0);
 	void HideElement(irr::gui::IGUIElement* element, bool set_action = false);
 	void PopupElement(irr::gui::IGUIElement* element, int hideframe = 0);
-	void WaitFrameSignal(int frame, std::unique_lock<epro::mutex>& _lck);
+	//kidy///////
+    //void WaitFrameSignal(int frame, std::unique_lock<epro::mutex>& _lck);
+    void WaitFrameSignal(int frame, std::unique_lock<epro::mutex>& _lck, bool forced = false);
+	//kidy///////
 	void DrawThumb(const CardDataC* cp, irr::core::vector2di pos, LFList* lflist, bool drag = false, const irr::core::recti* cliprect = nullptr, bool loadimage = true);
+	//kidy///////
+	void DrawThumb2(uint32_t code, irr::core::vector2di pos);
+	//kidy///////
 	void DrawDeckBd();
 	void SaveConfig();
 	void Suspend();
@@ -560,7 +784,17 @@ public:
 	void ParseGithubRepositories(const std::vector<const GitRepo*>& repos);
 	void UpdateRepoInfo(const GitRepo* repo, RepoGui* grepo);
 	void LoadServers();
-	void ShowCardInfo(uint32_t code, bool resize = false, imgType type = imgType::ART);
+	///kdiy//////////
+	void LoadLocalServers();
+	void ReloadLocalCBDuelRule();
+	void ReloadLocalCBRule();
+	std::tuple<bool, std::wstring> SetRandTexture(int i, int set, std::wstring setfilepath = L""); //set=0: not set config, 1: set by checkbox, 2: set by combobox
+	void ReloadTexture();
+	//void ShowCardInfo(uint32_t code, bool resize = false, imgType type = imgType::ART);
+    void ShowCardInfo(uint32_t code, bool resize = false, imgType type = imgType::ART, ClientCard* pcard = nullptr);
+    void ShowPlayerInfo(uint8_t player);
+    void DrawRealCard(ClientCard* pcard, irr::gui::CGUIImageButton* imgCard2[5], bool resize = false);
+	///kdiy//////////
 	void RefreshCardInfoTextPositions();
 	void ClearCardInfo(int player = 0);
 	void AddChatMsg(epro::wstringview msg, int player, int type);
@@ -676,6 +910,17 @@ public:
 	irr::core::vector3df atk_r;
 	irr::core::vector3df atk_t;
 	float atkdy;
+    ////kdiy//////
+	ClientCard* showpcard;
+	int showtype;
+	float atk2dy;
+	float atkdy2;
+	float atk2dy2;
+	float atkdy3;
+	float atkdy4;
+	double angle = 0.0f;
+	uint32_t showingcardalias = 0;
+    ////kdiy//////
 	int lpframe;
 	float lpd;
 	int lpplayer;
@@ -713,6 +958,60 @@ public:
 	std::vector<epro::path_string> field_dirs;
 	std::vector<epro::path_string> pic_dirs;
 	std::vector<epro::path_string> cover_dirs;
+	///kdiy////////
+    bool git_error = false;
+    bool first_play = false;
+    uint32_t showcardalias;
+    bool chklast = true;
+	bool isEvent;//locking flow, allow left mouse click notify_one() to skip
+	epro::condition_variable* cv;//should lock thread when play mode-story sound,this cv is in duelclient.cpp
+	bool haloNodeexist[2][12][10];
+    std::vector<irr::core::vector3df> haloNode[2][12][10];
+	sf::Sound chantsound, chantmusic;
+	sf::SoundBuffer soundBuffer;
+	bool videostart = false;
+	bool isAnime = false;
+	bool isFieldPlay[2] = {false, false};
+	bool isCloseupAnime[12] = {false, false, false, false, false, false, false, false, false, false, false, false};
+    sf::Sound videosound;
+	sf::SoundBuffer videosoundBuffer;
+	std::string currentVideo[15];
+	irr::video::ITexture* videotexture[15];
+    AVFormatContext* formatCtx2 = nullptr;
+    AVFormatContext* formatCtx[15];
+    AVCodecContext* audioCodecCtx = nullptr;
+    AVCodecContext* videoCodecCtx[15]; //0: summo anime, 1: own field anime, 2: opp field, others: closeup
+	AVFrame* audioFrame;
+    AVFrame* videoFrame[15];
+    int audioStreamIndex = -1;
+    int videoStreamIndex[15] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+	double timeAccumulated[15] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}; // Accumulate time to ensure smooth frame skipping
+	double ttimeAccumulated[15] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+	int frameps = 0, video_frameps = 0;
+	int video_width[15] = {0, 0, 0}, video_height[15] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	int64_t videoDuration[15];
+	double audioFrameDuration = 1.0;
+	double videoFrameDuration[15] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+	double nextFrameTime[15] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+	double videoFPS[15] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+	int framesToSkip[15] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+	std::vector<int16_t> audioBuffer;
+	bool openVideo(std::string videoName, bool audio = true, bool loop = false, int type = 0);
+	bool PlayVideo(bool audio = true, bool loop = false, int type = 0);
+    void StopVideo(bool reset = false, int type = 0, bool close = false);
+	std::vector<std::string> animecount;
+	std::string videowallpaper_path = "";
+	bool showcardinfo = false, showchat = false, showloc = false;
+	uint16_t current_phase = 0;
+	bool LoadJson(epro::path_string path, uint8_t character);
+	void LoadJsonInfo();
+	struct Ploat {
+		std::string file_path = "";
+		std::wstring text = L"";
+	};
+	std::unordered_map<std::string, std::wstring> Ploats[CHARACTER_VOICE-1];
+	std::vector<epro::path_string> closeup_dirs;
+	///kdiy////////
 	std::vector<epro::path_string> script_dirs;
 	std::vector<epro::path_string> init_scripts;
 	std::vector<epro::path_string> cores_to_load;
@@ -736,6 +1035,20 @@ public:
 	irr::gui::CGUITTFont* adFont;
 	irr::gui::CGUITTFont* lpcFont;
 	std::map<irr::gui::CGUIImageButton*, uint32_t> imageLoading;
+	/////kdiy/////////
+	irr::gui::CGUITTFont* atkFont;
+	irr::gui::CGUITTFont* defFont;
+	irr::gui::CGUITTFont* numFont0;
+	irr::gui::CGUITTFont* adFont0;
+	irr::gui::CGUITTFont* lpFont;
+	irr::gui::CGUITTFont* lpFont5ds;
+	irr::gui::CGUITTFont* lpFonta5;
+	irr::gui::CGUITTFont* lpFontv6;
+	irr::gui::CGUITTFont* lpFontdsod;
+	irr::gui::CGUITTFont* nameFont;
+	irr::gui::CGUITTFont* nameFontdsod;
+	irr::gui::CGUITTFont* turnFont;
+	/////kdiy/////////
 	//hint text
 	irr::gui::IGUIStaticText* stHintMsg;
 	irr::gui::IGUIStaticText* stTip;
@@ -754,6 +1067,27 @@ public:
 	IProgressBar* updateProgressTop;
 	irr::gui::IGUIStaticText* updateSubprogressText;
 	IProgressBar* updateProgressBottom;
+    /////kdiy/////////
+	irr::gui::IGUIWindow* wCardImg;
+	irr::gui::IGUIWindow* wCardImg0;
+	irr::gui::IGUIButton* CardInfo[8];
+	irr::gui::IGUIStaticText* stCardInfo[8];
+	std::wstring effectText[8];
+    irr::gui::IGUIStaticText* wCardInfo;
+	irr::gui::IGUIWindow* wBtnShowCard;
+	irr::gui::IGUIButton* btnShowCard;
+	irr::gui::IGUIButton* btnChatLog;
+	irr::gui::IGUIButton* btnCardLoc;
+	irr::gui::IGUIStaticText* stPasscodeScope2;
+	irr::gui::IGUIStaticText* stInfo2;
+	irr::gui::IGUIWindow* wLocation;
+	irr::gui::IGUIButton* btnLocation[6];
+	irr::gui::IGUIStaticText* stLocation[6];
+	irr::gui::IGUIWindow* pwupdateWindow;
+	irr::gui::IGUIStaticText* updatePwText;
+	irr::gui::IGUIEditBox* ebPw;
+	irr::gui::IGUIButton* btnPw;
+	/////kdiy/////////
 	struct ProgressBarStatus {
 		bool newFile;
 		std::wstring progressText;
@@ -773,7 +1107,6 @@ public:
 	irr::gui::IGUIEditBox* ebFileSaveName;
 	irr::gui::IGUIButton* btnFileSaveYes;
 	irr::gui::IGUIButton* btnFileSaveNo;
-
 	irr::gui::IGUIStaticText* fpsCounter;
 	std::vector<std::pair<irr::gui::IGUIElement*, uint32_t>> defaultStrings;
 };
