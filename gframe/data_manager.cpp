@@ -10,6 +10,9 @@
 #include "common.h"
 #include "file_stream.h"
 #include "fmt.h"
+/////kdiy/////
+#include "game_config.h"
+/////kdiy/////
 
 #if !defined(SQLITE_NOTICE)
 #define SQLITE_NOTICE      27
@@ -135,7 +138,19 @@ bool DataManager::ParseDB(sqlite3* pDB) {
 			cd.setcodes_p = cd.setcodes.data();
 		}
 		cd.type = static_cast<uint32_t>(sqlite3_column_int64(pStmt, 4));
-		cd.attack = sqlite3_column_int(pStmt, 5);
+		/////////////kdiy///////
+		int attack = sqlite3_column_int(pStmt, 5);
+		if(attack >= 999999)
+			cd.attack = 8888888;
+		else
+		/////////////kdiy///////
+			cd.attack = sqlite3_column_int(pStmt, 5);
+		/////////////kdiy///////
+		int defense = sqlite3_column_int(pStmt, 6);
+		if(defense >= 999999)
+			cd.defense = 8888888;
+		else
+		/////////////kdiy///////
 		cd.defense = sqlite3_column_int(pStmt, 6);
 		if(cd.type & TYPE_LINK) {
 			cd.link_marker = cd.defense;
@@ -146,15 +161,17 @@ bool DataManager::ParseDB(sqlite3* pDB) {
 		int level = sqlite3_column_int(pStmt, 7);
 		if(level < 0)
 			cd.level = -(level & 0xff);
+		/////////////kdiy///////
+		else if ((level & 0xff) > 0xf)
+			cd.level = -((level & 0xff) - 0xf);
+		/////////////kdiy///////
 		else
 			cd.level = level & 0xff;
-
 		cd.lscale = (level >> 24) & 0xff;
 		cd.rscale = (level >> 16) & 0xff;
 		cd.race = static_cast<uint64_t>(sqlite3_column_int64(pStmt, 8));
 		cd.attribute = static_cast<uint32_t>(sqlite3_column_int64(pStmt, 9));
 		cd.category = static_cast<uint32_t>(sqlite3_column_int64(pStmt, 10));
-
 		if(GetWstring(cs.name, pStmt, 11))
 			cs.uppercase_name = Utils::ToUpperNoAccents(cs.name);
 		else
@@ -352,12 +369,37 @@ const CardDataC* DataManager::GetMappedCardData(uint32_t code) const {
 		return gDataManager->GetCardData(it->second);
 	return nullptr;
 }
-epro::wstringview DataManager::GetName(uint32_t code) const {
+/////kdiy/////
+//epro::wstringview DataManager::GetName(uint32_t code) const {
+	// auto csit = cards.find(code);
+	// if(csit == cards.end() || csit->second.GetStrings().name.empty())
+		// return unknown_string;
+	// return csit->second.GetStrings().name;
+std::wstring DataManager::GetOriginalName(uint32_t code, bool hidenametag) const {
 	auto csit = cards.find(code);
 	if(csit == cards.end() || csit->second.GetStrings().name.empty())
-		return unknown_string;
-	return csit->second.GetStrings().name;
+		return std::wstring(unknown_string);
+	std::wstring name = csit->second.GetStrings().name;
+	if(gGameConfig->chkHideNameTag || hidenametag) {
+		auto index = name.find(L"(");
+		auto index_2 = name.find(65288);
+        auto index_3 = name.find(L" (");
+        if(index != std::wstring::npos) name = name.substr(0,index);
+        else if(index_3 != std::wstring::npos) name = name.substr(0,index_3);
+        else if(index_2 != std::wstring::npos) name = name.substr(0,index_2);
+	}
+	return name;
 }
+std::wstring DataManager::GetName(uint32_t code, bool hidenametag) const {
+	return gDataManager->GetName(nullptr, code, hidenametag);
+}
+std::wstring DataManager::GetName(ClientCard* pcard, bool hidenametag) const {
+	return gDataManager->GetName(pcard, pcard->code, hidenametag);
+}
+std::wstring DataManager::GetName(ClientCard* pcard, uint32_t code, bool hidenametag) const {
+	return (pcard && pcard->is_real && pcard->namecode) ? epro::format(gDataManager->GetOriginalName(pcard->namecode, hidenametag), pcard->is_rreal ? pcard->orealcardname : gDataManager->GetOriginalName(code, true)) : GetOriginalName(code, hidenametag);
+}
+/////kdiy/////
 epro::wstringview DataManager::GetText(uint32_t code) const {
 	auto csit = cards.find(code);
 	if(csit == cards.end() || csit->second.GetStrings().text.empty())
@@ -445,7 +487,10 @@ epro::wstringview DataManager::FormatLocation(uint32_t location, int sequence) c
 }
 std::wstring DataManager::FormatAttribute(uint32_t attribute) const {
 	std::wstring res;
-	for(uint32_t i = 1010, filter = 1; filter <= ATTRIBUTE_DIVINE; filter <<= 1, ++i) {
+	/////zdiy/////
+	//for(uint32_t i = 1010, filter = 1; filter <= ATTRIBUTE_DIVINE; filter <<= 1, ++i) {
+	for(uint32_t i = 1010, filter = 1; filter <= ATTRIBUTE_HADES; filter <<= 1, ++i) {
+	/////zdiy/////
 		if(attribute & filter) {
 			if(!res.empty())
 				res += L'|';
@@ -472,7 +517,7 @@ static std::wstring FormatSkill(uint64_t skill_type) {
 std::wstring DataManager::FormatRace(uint64_t race, bool isSkill) const {
 	if(isSkill) return FormatSkill(race);
 	std::wstring res;
-	for(uint32_t i = 0; race; race >>= 1, ++i) {
+    for(uint32_t i = 0; race; race >>= 1, ++i) {
 		if(race & 0x1u) {
 			if(!res.empty())
 				res += L'|';
@@ -493,6 +538,9 @@ std::wstring DataManager::FormatType(uint32_t type) const {
 		res += GetSysString(1078);
 	}
 	for(uint32_t i = 1050, filter = 1; filter != TYPE_SKILL; filter <<= 1, ++i) {
+        ///kdiy/////
+        if(i == 1050) continue;
+        ///kdiy/////
 		if(type & filter) {
 			if(!res.empty())
 				res += L'|';
@@ -513,7 +561,12 @@ std::wstring DataManager::FormatScope(uint32_t scope, bool hideOCGTCG) const {
 		{SCOPE_CUSTOM, 1268},
 		{SCOPE_SPEED, 1910},
 		{SCOPE_PRERELEASE, 1903},
-		{SCOPE_RUSH, 1911}
+		{SCOPE_RUSH, 1911},
+		/////zdiy/////
+		{SCOPE_ZCG, 1906}
+		/////zdiy/////
+
+
 	};
 	if (hideOCGTCG && scope == SCOPE_OCG_TCG) return L"";
 	std::wstring buffer;
@@ -534,7 +587,10 @@ std::wstring DataManager::FormatSetName(const std::vector<uint16_t>& setcodes) c
 			break;
 		auto name = GetSetName(setcode);
 		if(!res.empty())
-			res += L'|';
+            ///kdiy/////////
+			//res += L'|';
+            res += L'\n';
+            ///kdiy/////////
 		if(name.empty())
 			res += unknown_string;
 		else
@@ -608,6 +664,12 @@ bool DataManager::IsCardDeclarable(const CardDataC* cd, const uint64_t* opcode_l
 		BINARY_OP(OPCODE_RSHIFT, >>);
 		UNARY_OP_OP(OPCODE_ISCODE, code, ==);
 		UNARY_OP_OP(OPCODE_ISTYPE, type, &);
+		/////kdiy//////////
+		UNARY_OP_OP(OPCODE_ISOTYPE, ot, &);
+		UNARY_OP_OP(OPCODE_ISLEVEL, level, == (int32_t));
+		UNARY_OP_OP(OPCODE_ISLEVELLARGER, level, > (int32_t));
+		UNARY_OP_OP(OPCODE_ISLEVELSMALLER, level, < (int32_t));
+		/////kdiy//////////
 		UNARY_OP_OP(OPCODE_ISRACE, race, &);
 		UNARY_OP_OP(OPCODE_ISATTRIBUTE, attribute, &);
 		GET_OP(OPCODE_GETCODE, code);
@@ -649,7 +711,10 @@ bool DataManager::IsCardDeclarable(const CardDataC* cd, const uint64_t* opcode_l
 	if(stack.size() != 1 || stack.top() == 0)
 		return false;
 	return cd->code == CARD_MARINE_DOLPHIN || cd->code == CARD_TWINKLE_MOSS
-		|| ((alias || !cd->alias) && (token || ((cd->type & (TYPE_MONSTER + TYPE_TOKEN)) != (TYPE_MONSTER + TYPE_TOKEN))));
+		/////////kdiy///////////
+		//|| ((alias || !cd->alias) && (token || ((cd->type & (TYPE_MONSTER + TYPE_TOKEN)) != (TYPE_MONSTER + TYPE_TOKEN))));
+		|| ((alias || !cd->alias) && (token || (((cd->type & (TYPE_MONSTER + TYPE_TOKEN)) != (TYPE_MONSTER + TYPE_TOKEN)) && ((cd->type & (TYPE_SPELL + TYPE_TOKEN)) != (TYPE_SPELL + TYPE_TOKEN)))));
+		/////////kdiy///////////
 }
 #undef BINARY_OP
 #undef UNARY_OP
