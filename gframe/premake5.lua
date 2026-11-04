@@ -44,6 +44,29 @@ local ygopro_config=function(static_core)
 	if _OPTIONS["update-url"] then
 		defines { "UPDATE_URL=" .. _OPTIONS["update-url"] }
 	end
+	--------kdiy-----
+	if _OPTIONS["closeup"] then
+		defines { "DEFAULT_CLOSEUP_URL=" .. _OPTIONS["closeup"] }
+	end
+    if _OPTIONS["zip"] then
+		defines { "Zip=" .. _OPTIONS["zip"] }
+	end
+    if _OPTIONS["update-pw"] then
+		defines { "Update_PW=" .. _OPTIONS["update-pw"] }
+	end	
+	if _OPTIONS["jhdpics"] then
+		defines { "DEFAULT_JHDPIC_URL=" .. _OPTIONS["jhdpics"] }
+	end
+	if _OPTIONS["vip"] then
+		defines { "VIP=" .. _OPTIONS["vip"] }
+	end
+	if _OPTIONS["ek"] then
+		defines { "EK=" .. _OPTIONS["ek"] }
+	end
+	if _OPTIONS["server_url"] then
+		defines { "DEFAULT_SERVER_URL=" .. _OPTIONS["server_url"] }
+	end
+	--------kdiy-----
 	if _OPTIONS["bundled-font"] then
 		defines "YGOPRO_USE_BUNDLED_FONT"
 	else
@@ -124,6 +147,9 @@ local ygopro_config=function(static_core)
 				if _OPTIONS["use-mpg123"] then
 					links { "mpg123" }
 				end
+			filter { "system:windows", "action:vs*" }
+				libdirs "../audio/lib"
+				links { "FLAC", "vorbisfile", "vorbis", "ogg", "OpenAL32" }
 			filter {}
 		end
 		if sounds.miniaudio then
@@ -251,13 +277,25 @@ local ygopro_config=function(static_core)
 		links { "pthread" }
 
 	filter "system:windows"
-		links { "wbemuuid", "opengl32", "ws2_32", "winmm", "gdi32", "kernel32", "user32", "imm32", "wldap32", "crypt32", "advapi32", "rpcrt4", "ole32", "oleaut32", "uuid", "winhttp" }
+		links { "wbemuuid", "opengl32", "ws2_32", "winmm", "gdi32", "kernel32", "user32", "imm32", "wldap32", "crypt32", "advapi32", "rpcrt4", "ole32", "oleaut32", "uuid", "winhttp", "bcrypt", "avrt" }
 		if not _OPTIONS["oldwindows"] then
 			links "iphlpapi"
 		end
 		if not (_OPTIONS["oldwindows"] and _ACTION == "gmake2") then
 			links "secur32"
 		end
+		
+    	-- includedirs{ "../opencv2/include" }
+    	-- libdirs{ "../opencv2/lib" }
+    	-- links "opencv_world470"
+		if _OPTIONS["ffmpeg-root"] then
+			externalincludedirs { _OPTIONS["ffmpeg-root"] .. "/include" }
+			libdirs { _OPTIONS["ffmpeg-root"] .. "/lib" }
+		else
+			includedirs { "../ffmpeg/include" }
+			libdirs { "../ffmpeg/lib" }
+		end
+		links { "avcodec", "avdevice", "avfilter", "avformat", "avutil", "swresample", "swscale" }
 
 	filter {}
 	if _OPTIONS["prebuilt-core"] then
@@ -273,10 +311,15 @@ end
 
 if not _OPTIONS["no-core"] then
 	project "ygopro"
-		targetname "ygopro"
+		targetname "ygopro-KCG"
+		if _OPTIONS["prebuilt-core"] then
+			libdirs { _OPTIONS["prebuilt-core"] }
+		end
+		links { "ocgcore" }
 		ygopro_config(true)
 end
 
+
 project "ygoprodll"
-	targetname "ygoprodll"
+	targetname "Edopro-KCG"
 	ygopro_config()
