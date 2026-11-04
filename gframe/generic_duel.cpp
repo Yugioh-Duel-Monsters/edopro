@@ -3,7 +3,9 @@
 #include "netserver.h"
 #include "game.h"
 #include "core_utils.h"
-
+////kdiy//////
+#include "game_config.h"
+////kdiy//////
 namespace ygo {
 
 ReplayStream GenericDuel::replay_stream;
@@ -185,7 +187,7 @@ void GenericDuel::JoinGame(DuelPlayer* dp, CTOS_JoinGame* pkt, bool is_creator) 
 			BufferIO::CopyStr(dueler->name, scpe.name, 20);
 			scpe.pos = GetPos(dueler);
 			NetServer::SendPacketToPlayer(dp, STOC_HS_PLAYER_ENTER, scpe);
-		});
+			});
 		if(swapped)
 			std::swap(players.home, players.opposing);
 		NetServer::SendPacketToPlayer(dp, STOC_DUEL_START);
@@ -235,7 +237,7 @@ void GenericDuel::JoinGame(DuelPlayer* dp, CTOS_JoinGame* pkt, bool is_creator) 
 			scpc.status = (scpe.pos << 4) | PLAYERCHANGE_READY;
 			NetServer::SendPacketToPlayer(dp, STOC_HS_PLAYER_CHANGE, scpc);
 		}
-	});
+		});
 	if(observers.size()) {
 		STOC_HS_WatchChange scwc;
 		scwc.watch_count = (uint16_t)observers.size();
@@ -363,13 +365,43 @@ void GenericDuel::ToObserver(DuelPlayer* dp) {
 	sctc.type = (dp == host_player ? 0x10 : 0) | dp->type;
 	NetServer::SendPacketToPlayer(dp, STOC_TYPE_CHANGE, sctc);
 }
-void GenericDuel::PlayerReady(DuelPlayer* dp, bool is_ready) {
+/////kdiy//////////
+//void GenericDuel::PlayerReady(DuelPlayer* dp, bool is_ready) {
+void GenericDuel::PlayerReady(DuelPlayer* dp, bool is_ready, bool ai) {
+/////kdiy//////////
 	if(dp->type >= (players.home_size + players.opposing_size))
 		return;
 	auto& dueler = GetAtPos(dp->type);
 	if(dueler.ready == is_ready)
 		return;
-	if(is_ready) {
+    /////kdiy//////////
+	//if(is_ready) {
+    if(is_ready && !ai) {
+#ifndef VIP
+        bool kcgwarn = false;
+        std::vector<const CardDataC*>::iterator iter;
+		for(iter = dueler.pdeck.main.begin(); iter != dueler.pdeck.main.end(); ) {
+			if(((*iter)->code < 2500 || (*iter)->code == 900000061 || (*iter)->code == 900000062 || (*iter)->code == 900000071 || (*iter)->code == 900000074) && (*iter)->code != 483) {
+                kcgwarn = true;
+				iter = dueler.pdeck.main.erase(iter);
+            } else
+				++iter;
+        }
+		//kcgvip/////////
+        for(iter = dueler.pdeck.extra.begin(); iter != dueler.pdeck.extra.end(); ) {
+			if(((*iter)->code < 2500 || (*iter)->code == 10000044 || ((*iter)->code > 12200 && (*iter)->code < 13736) || ((*iter)->code >= 122600 && (*iter)->code < 123132) || ((*iter)->code > 900000020 && (*iter)->code < 900000100)) && (*iter)->code != 483) {
+                kcgwarn = true;
+				iter = dueler.pdeck.extra.erase(iter);
+            } else
+				++iter;
+		}
+        if(kcgwarn) {
+			DeckError deck_error = DeckManager::CheckDeckSize(dueler.pdeck, host_info.sizes);
+			deck_error.type = DeckError::KCGCARD;
+			deck_error.code = dueler.deck_error;
+        }
+#endif
+    /////kdiy//////////
 		DeckError deck_error = DeckManager::CheckDeckSize(dueler.pdeck, host_info.sizes);
 		if(deck_error.type == DeckError::NONE && !host_info.no_check_deck_content) {
 			if(dueler.deck_error) {
@@ -394,6 +426,10 @@ void GenericDuel::PlayerReady(DuelPlayer* dp, bool is_ready) {
 	scpc.status = (dp->type << 4) | (is_ready ? PLAYERCHANGE_READY : PLAYERCHANGE_NOTREADY);
 	NetServer::SendPacketToPlayer(nullptr, STOC_HS_PLAYER_CHANGE, scpc);
 	ResendToAll();
+	/////kdiy/////
+	if(mainGame->mode->isMode)
+		mainGame->mode->ModePlayerReady(ai);
+	/////kdiy/////
 }
 void GenericDuel::PlayerKick(DuelPlayer* dp, uint8_t pos) {
 	if(pos >= (players.home_size + players.opposing_size))
@@ -463,6 +499,13 @@ void GenericDuel::StartDuel(DuelPlayer* dp) {
 		obs->state = CTOS_LEAVE_GAME;
 		NetServer::ReSendToPlayer(obs);
 	}
+	/////kdiy/////
+	if(mainGame->mode->isMode && mainGame->mode->rule == MODE_STORY) {
+        mainGame->isHostingOnline = false;
+		NetServer::SendPacketToPlayer(players.home.front(), STOC_MODE_SHOW_PLOAT);
+		return;
+	}
+	/////kdiy/////
 	NetServer::SendPacketToPlayer(players.home.front(), STOC_SELECT_HAND);
 	NetServer::ReSendToPlayer(players.opposing.front());
 	hand_result[0] = 0;
@@ -471,6 +514,17 @@ void GenericDuel::StartDuel(DuelPlayer* dp) {
 	players.opposing.front().player->state = CTOS_HAND_RESULT;
 	duel_stage = DUEL_STAGE_FINGER;
 }
+/////kdiy/////
+void GenericDuel::ModeStartDuel(DuelPlayer* dp) {
+	NetServer::SendPacketToPlayer(players.home.front(), STOC_SELECT_HAND);
+	NetServer::ReSendToPlayer(players.opposing.front());
+	hand_result[0] = 0;
+	hand_result[1] = 0;
+	players.home.front().player->state = CTOS_HAND_RESULT;
+	players.opposing.front().player->state = CTOS_HAND_RESULT;
+	duel_stage = DUEL_STAGE_FINGER;
+}
+/////zkdiydiy/////
 void GenericDuel::HandResult(DuelPlayer* dp, uint8_t res) {
 	if(res > 3 || dp->state != CTOS_HAND_RESULT)
 		return;
@@ -529,6 +583,23 @@ void GenericDuel::RematchResult(DuelPlayer* dp, uint8_t rematch) {
 		}
 		dp->state = 0xff;
 		auto& dueler = GetAtPos(dp->type);
+		/////kdiy//////////
+#ifndef VIP
+        std::vector<const CardDataC*>::iterator iter;
+		for(iter = dueler.pdeck.main.begin(); iter != dueler.pdeck.main.end(); ) {
+			if(((*iter)->code < 2500 || (*iter)->code == 900000061 || (*iter)->code == 900000062 || (*iter)->code == 900000071 || (*iter)->code == 900000074) && (*iter)->code != 483) {
+				iter = dueler.pdeck.main.erase(iter);
+            } else
+				++iter;
+        }
+        for(iter = dueler.pdeck.extra.begin(); iter != dueler.pdeck.extra.end(); ) {
+			if(((*iter)->code < 2500 || (*iter)->code == 10000044 || (*iter)->code == 123106 || (*iter)->code == 123108) && (*iter)->code != 483) {
+				iter = dueler.pdeck.extra.erase(iter);
+            } else
+				++iter;
+		}
+#endif
+        /////kdiy//////////
 		dueler.ready = true;
 		NetServer::SendPacketToPlayer(dp, STOC_DUEL_START);
 		if(CheckReady()) {
@@ -604,7 +675,7 @@ void GenericDuel::TPResult(DuelPlayer* dp, uint8_t tp) {
 		auto rnd = Utils::GetRandomNumberGenerator();
 		IteratePlayers([&rnd](duelist& dueler) {
 			std::shuffle(dueler.pdeck.main.begin(), dueler.pdeck.main.end(), rnd);
-		});
+			});
 	}
 	new_replay.Write<uint64_t>(opt);
 	last_replay.Write<uint32_t>(host_info.start_lp, false);
@@ -612,7 +683,7 @@ void GenericDuel::TPResult(DuelPlayer* dp, uint8_t tp) {
 	last_replay.Write<uint32_t>(host_info.draw_count, false);
 	last_replay.Write<uint64_t>(opt, false);
 	last_replay.Flush();
-	//
+	
 	std::vector<uint32_t> extracards;
 	if(host_info.extra_rules & SEALED_DUEL)
 		extracards.push_back(511005092);
@@ -630,16 +701,38 @@ void GenericDuel::TPResult(DuelPlayer* dp, uint8_t tp) {
 		extracards.push_back(511600002);
 	if(host_info.extra_rules & TURBO_DUEL)
 		extracards.push_back(110000000);
-	if(host_info.extra_rules & RULE_OF_THE_DAY)
-		extracards.push_back(777777777);
+	////kdiy///////
+	// if(host_info.extra_rules & RULE_OF_THE_DAY)
+	// 	extracards.push_back(777777777);
+	////kdiy///////
 	if(host_info.extra_rules & COMMAND_DUEL)
 		extracards.push_back(95200000);
 	if(host_info.extra_rules & DECK_MASTER)
 		extracards.push_back(153999999);
-	if(host_info.extra_rules & DESTINY_DRAW)
-		extracards.push_back(511004000);
+	////kdiy///////
+	// if(host_info.extra_rules & DESTINY_DRAW)
+	// 	extracards.push_back(511004000);
+	////kdiy///////
 	if(host_info.extra_rules & ACTION_DUEL)
 		extracards.push_back(151999999);
+	////kdiy///////
+	if(host_info.extra_rules & KCG_System)
+		extracards.push_back(85);
+	if(host_info.extra_rules & Field_System)
+		extracards.push_back(86);
+	if(host_info.extra_rules & No_Shuffle)
+		extracards.push_back(842);
+	if(host_info.extra_rules & OppLP)
+		extracards.push_back(843);
+	if(host_info.extra_rules & OppHand)
+		extracards.push_back(844);
+	if(mainGame->mode->isMode) {
+		if(mainGame->mode->rule == MODE_RULE_ZCG || mainGame->mode->rule == MODE_RULE_ZCG_NO_RANDOM)
+			extracards.push_back(99710410);
+		if(mainGame->mode->rule == MODE_STORY)
+            extracards.push_back(mainGame->mode->lua[mainGame->mode->chapter]);
+	}
+	/////kdiy/////
 	OCG_NewCardInfo card_info = { 0, 0, 0, 0, 0, 0, POS_FACEDOWN_DEFENSE };
 	for(auto it = extracards.crbegin(), end = extracards.crend(); it != end; ++it) {
 		card_info.code = *it;
@@ -750,7 +843,7 @@ void GenericDuel::DuelEndProc() {
 		winc[match_result[i]]++;
 	int minvictories = (int)std::ceil(best_of / 2.0);
 	if(match_kill || (winc[0] >= minvictories || winc[1] >= minvictories) || (int)match_result.size() >= best_of) {
-		seeking_rematch = true;
+ 		seeking_rematch = true;
 		NetServer::SendPacketToPlayer(nullptr, STOC_WAITING_REMATCH);
 		ResendToAll();
 		NetServer::SendPacketToPlayer(nullptr, STOC_REMATCH);
@@ -863,6 +956,12 @@ void GenericDuel::Sending(CoreUtils::Packet& packet, int& return_value, bool& re
 			break;
 		}
 		case 10:
+		////kdiy//////
+		case 21:
+		case 22:
+		case 23:
+		case 24:
+		////kdiy//////
 		case 201:
 		case 202:
 		case 203: {
@@ -1023,14 +1122,16 @@ void GenericDuel::Sending(CoreUtils::Packet& packet, int& return_value, bool& re
 	case MSG_MOVE: {
 		pbufw = pbuf;
 		pbuf += 4;
-		/*CoreUtils::loc_info previous = */CoreUtils::ReadLocInfo(pbuf, false);
 		CoreUtils::loc_info current = CoreUtils::ReadLocInfo(pbuf, false);
 		player = current.controler;
 		SEND(nullptr);
 		for(auto& dueler : (player == 0) ? players.home : players.opposing)
 			NetServer::ReSendToPlayer(dueler);
-		if (!(current.location & (LOCATION_GRAVE + LOCATION_OVERLAY)) && ((current.location & (LOCATION_DECK + LOCATION_HAND)) || (current.position & POS_FACEDOWN)))
+		/////kdiy/////
+		//if (!(current.location & (LOCATION_GRAVE + LOCATION_OVERLAY)) && ((current.location & (LOCATION_DECK + LOCATION_HAND)) || (current.position & POS_FACEDOWN)))
+		if (!mainGame->mode->isMode && !(current.location & (LOCATION_GRAVE + LOCATION_OVERLAY)) && ((current.location & (LOCATION_DECK + LOCATION_HAND)) || (current.position & POS_FACEDOWN)))
 			BufferIO::Write<uint32_t>(pbufw, 0);
+		/////kdiy/////
 		SEND(nullptr);
 		for(auto& dueler : (player == 1) ? players.home : players.opposing)
 			NetServer::ReSendToPlayer(dueler);
