@@ -122,7 +122,9 @@ int edopro_main(const args_t& args) {
 		const epro::path_stringview dir = userdir.enabled ? userdir.argument : EPRO_TEXT("./");
 		ygo::Utils::SetUserStorageDirectory(dir);
 	}
-	ygo::Utils::SetupCrashDumpLogging();
+	/////kdiy/////////
+	//ygo::Utils::SetupCrashDumpLogging();
+    /////kdiy/////////
 	std::optional<ThreadsCleaner> cleaner;
 	try {
 		ThreadsStartup();
