@@ -27,31 +27,134 @@ void ClientCard::UpdateInfo(const CoreUtils::Query& query) {
 	CHECK_AND_SET(QUERY_ALIAS, alias);
 	CHECK_AND_SET(QUERY_TYPE, type);
 	CHECK_AND_SET(QUERY_ATTRIBUTE, attribute);
-	CHECK_AND_SET(QUERY_RACE, race);
+    CHECK_AND_SET(QUERY_RACE, race);
 	CHECK_AND_SET(QUERY_BASE_ATTACK, base_attack);
 	CHECK_AND_SET(QUERY_BASE_DEFENSE, base_defense);
 	CHECK_AND_SET(QUERY_REASON, reason);
 	CHECK_AND_SET(QUERY_OWNER, owner);
 	CHECK_AND_SET(QUERY_STATUS, status);
 	CHECK_AND_SET(QUERY_COVER, cover);
-	if(query.flag & QUERY_CODE)
+	//kdiy////////
+	// if(query.flag & QUERY_CODE)
+	// 	SetCode(query.code);
+	if(query.flag & QUERY_CODE) {
 		SetCode(query.code);
+		if(location == LOCATION_DECK) {
+			for(size_t i = 0; i < mainGame->dField.deck_real.size(); i++) {
+				ClientCard rcard = mainGame->dField.deck_real[i];
+				if(query.code == rcard.code) {
+					is_change = rcard.is_change;
+					piccode = rcard.piccode;
+					rsetnames = rcard.rsetnames;
+					rtype = rcard.rtype;
+					rlevel = rcard.rlevel;
+					rattribute = rcard.rattribute;
+					rrace = rcard.rrace;
+					rattack = rcard.rattack;
+					rdefense = rcard.rdefense;
+					rlscale = rcard.rlscale;
+					rrscale = rcard.rrscale;
+					rlink_marker = rcard.rlink_marker;
+					is_real = rcard.is_real;
+					is_rreal = rcard.is_rreal;
+					effcode = rcard.effcode;
+					namecode = rcard.namecode;
+					realcardname = rcard.realcardname;
+					orealcardname = rcard.orealcardname;
+					text_hints = rcard.text_hints;
+					mainGame->dField.deck_real.erase(mainGame->dField.deck_real.begin() + i);
+					break;
+				}
+			}
+		}
+		if(location == LOCATION_HAND) {
+			for(size_t i = 0; i < mainGame->dField.hand_real.size(); i++) {
+				ClientCard rcard = mainGame->dField.hand_real[i];
+				if(query.code == rcard.code) {
+					is_change = rcard.is_change;
+					piccode = rcard.piccode;
+					rsetnames = rcard.rsetnames;
+					rtype = rcard.rtype;
+					rlevel = rcard.rlevel;
+					rattribute = rcard.rattribute;
+					rrace = rcard.rrace;
+					rattack = rcard.rattack;
+					rdefense = rcard.rdefense;
+					rlscale = rcard.rlscale;
+					rrscale = rcard.rrscale;
+					rlink_marker = rcard.rlink_marker;
+					is_real = rcard.is_real;
+					is_rreal = rcard.is_rreal;
+					effcode = rcard.effcode;
+					namecode = rcard.namecode;
+					realcardname = rcard.realcardname;
+					orealcardname = rcard.orealcardname;
+					text_hints = rcard.text_hints;
+					mainGame->dField.hand_real.erase(mainGame->dField.hand_real.begin() + i);
+					break;
+				}
+			}
+		}
+		if(location == LOCATION_EXTRA && !(position & POS_FACEUP)) {
+			for(size_t i = 0; i < mainGame->dField.extra_real.size(); i++) {
+				ClientCard rcard = mainGame->dField.extra_real[i];
+				if(query.code == rcard.code) {
+					is_change = rcard.is_change;
+					piccode = rcard.piccode;
+					rsetnames = rcard.rsetnames;
+					rtype = rcard.rtype;
+					rlevel = rcard.rlevel;
+					rattribute = rcard.rattribute;
+					rrace = rcard.rrace;
+					rattack = rcard.rattack;
+					rdefense = rcard.rdefense;
+					rlscale = rcard.rlscale;
+					rrscale = rcard.rrscale;
+					rlink_marker = rcard.rlink_marker;
+					is_real = rcard.is_real;
+					is_rreal = rcard.is_rreal;
+					effcode = rcard.effcode;
+					namecode = rcard.namecode;
+					realcardname = rcard.realcardname;
+					orealcardname = rcard.orealcardname;
+					text_hints = rcard.text_hints;
+					mainGame->dField.extra_real.erase(mainGame->dField.extra_real.begin() + i);
+					break;
+				}
+			}
+		}
+	}
+	//kdiy////////
 	if(query.flag & QUERY_POSITION) {
 		if(IsDifferent(position, static_cast<uint8_t>(query.position)) && (location & (LOCATION_EXTRA | LOCATION_REMOVED)))
 			mainGame->dField.MoveCard(this, 1);
 	}
 	if(query.flag & QUERY_LEVEL) {
 		if(IsDifferent(level, query.level) || lvstring.empty())
-			lvstring = epro::format(L"L{}", level);
+			//////////kdiy////////////////////
+		    //lvstring = epro::format(L"L{}",level);
+            lvstring = epro::format(L"{}",level);
+		    //////////kdiy////////////////////
 	}
 	if(query.flag & QUERY_RANK) {
 		if(IsDifferent(rank, query.rank) || rkstring.empty())
-			rkstring = epro::format(L"R{}", rank);
+            /////////kdiy////////////////////
+			//rkstring = epro::format(L"R{}", rank);
+            rkstring = epro::format(L"{}", rank);
+            /////////kdiy////////////////////
 	}
 	if(query.flag & QUERY_ATTACK) {
 		if(IsDifferent(attack, query.attack) || atkstring.empty()) {
 			if(attack < 0) {
 				atkstring = L"?";
+            //////////kdiy////////////////////
+            } else if (attack >= 9999999) {
+                attack = 9999999;
+                atkstring = L"(\u221E)";
+            } else if (attack >= 8888888) {
+                attack = 8888888;
+                atkstring = L"\u221E";
+            //////////kdiy////////////////////
 			} else
 				atkstring = epro::to_wstring(attack);
 		}
@@ -60,6 +163,14 @@ void ClientCard::UpdateInfo(const CoreUtils::Query& query) {
 		if(IsDifferent(defense, query.defense) || defstring.empty()) {
 			if(defense < 0) {
 				defstring = L"?";
+            //////////kdiy////////////////////
+            } else if (defense >= 9999999) {
+                 defense = 9999999;
+                defstring = L"(\u221E)";
+            } else if (defense >= 8888888) {
+                defense = 8888888;
+                defstring = L"\u221E";
+            //////////kdiy////////////////////
 			} else
 				defstring = epro::to_wstring(defense);
 		}
@@ -109,8 +220,24 @@ void ClientCard::UpdateInfo(const CoreUtils::Query& query) {
 	}
 	if(query.flag & QUERY_LINK) {
 		if(IsDifferent(link, query.link) || linkstring.empty())
-			linkstring = epro::format(L"L{}", link);
+            //////kdiy//////////
+			//linkstring = epro::format(L"L{}", link);
+            linkstring = epro::format(L"{}", link);
+            //////kdiy//////////
 		link_marker = query.link_marker;
+		//////kdiy//////////
+		int32_t mixlink = 0;
+		if(link_marker & LINK_MARKER_BOTTOM_LEFT) mixlink += 1;
+		if(link_marker & LINK_MARKER_BOTTOM_RIGHT) mixlink += 1;
+		if(link_marker & LINK_MARKER_BOTTOM) mixlink += 1;
+		if(link_marker & LINK_MARKER_LEFT) mixlink += 1;
+		if(link_marker & LINK_MARKER_RIGHT) mixlink += 1;
+		if(link_marker & LINK_MARKER_TOP) mixlink += 1;
+		if(link_marker & LINK_MARKER_TOP_LEFT) mixlink += 1;
+		if(link_marker & LINK_MARKER_TOP_RIGHT) mixlink += 1;
+		if(IsDifferent(mixlink, query.link))
+			linkstring = epro::format(L"{}", mixlink);
+		//////kdiy//////////
 	}
 }
 void ClientCard::ClearTarget() {
