@@ -80,6 +80,7 @@ const sf::SoundBuffer& SoundSFMLBase::LookupSound(const std::string& name)
 	return *it->second;
 }
 
+
 bool SoundSFMLBase::PlaySound(const std::string& name)
 {
 	auto& buf = LookupSound(name);
