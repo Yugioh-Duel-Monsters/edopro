@@ -70,6 +70,9 @@ public:
 	static int ClientAnalyze(const CoreUtils::Packet& packet) {
 		return ClientAnalyze(packet.data(), static_cast<uint32_t>(packet.buff_size()));
 	}
+    ///kdiyiy/////
+	static void ModeClientAnalyze(uint8_t chapter, const uint8_t* pbuf,uint8_t msg);
+    ///kdiy/////
 	static int GetSpectatorsCount() {
 		return watching;
 	};
