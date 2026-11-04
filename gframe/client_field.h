@@ -109,8 +109,30 @@ public:
 	void RefreshHandHitboxes();
 
 	void GetChainDrawCoordinates(uint8_t controler, uint8_t location, uint32_t sequence, irr::core::vector3df* t);
-	void GetCardDrawCoordinates(ClientCard* pcard, irr::core::vector3df* t, irr::core::vector3df* r, bool setTrans = false);
-	void MoveCard(ClientCard* pcard, float frame);
+    ////kdiy///////////
+	// void GetCardDrawCoordinates(ClientCard* pcard, irr::core::vector3df* t, irr::core::vector3df* r, bool setTrans = false);
+	// void MoveCard(ClientCard* pcard, float frame);
+	//move pcard to new position with some translation
+	void GetCardDrawCoordinates(ClientCard* pcard, irr::core::vector3df* t, irr::core::vector3df* r, bool setTrans = false, irr::core::vector3df trans2 = irr::core::vector3df(0, 0, 0));
+	void MoveCard(ClientCard* pcard, float frame, irr::core::vector3df trans2 = irr::core::vector3df(0, 0, 0));
+	//move pcard to destined position with some % adjustment
+	void MoveCard(ClientCard* pcard, irr::core::vector3df trans, float frame, float tune = 1.0f);
+	std::vector<ClientCard*> flip_cards;
+	std::vector<ClientCard*> summon_cards;
+	std::vector<ClientCard*> spsummon_cards;
+	std::vector<ClientCard*> equip_cards;
+	std::vector<ClientCard*> battle_cards;
+	std::vector<ClientCard*> destroy_cards;
+	std::vector<ClientCard*> remove_cards;
+	std::vector<ClientCard> deck_real;
+	std::vector<ClientCard> hand_real;
+	std::vector<ClientCard> extra_real;
+	bool recovering = false;
+	bool damaging = false;
+	bool destroying = false;
+	bool removing = false;
+	bool reattack = false;
+    ////kdiy///////////
 	void FadeCard(ClientCard* pcard, float alpha, float frame);
 	bool ShowSelectSum();
 	bool CheckSelectSum();
