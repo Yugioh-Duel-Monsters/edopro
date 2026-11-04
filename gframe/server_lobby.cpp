@@ -23,6 +23,9 @@ namespace ygo {
 
 std::vector<RoomInfo> ServerLobby::roomsVector;
 std::vector<ServerInfo> ServerLobby::serversVector;
+///kdiy////////
+std::vector<ServerInfo> ServerLobby::serversVector2;
+///kdiy////////
 std::atomic_bool ServerLobby::is_refreshing{ false };
 std::atomic_bool ServerLobby::has_refreshed{ false };
 
@@ -180,6 +183,14 @@ void ServerLobby::GetRoomsThread() {
 	auto curl_handle = curl_easy_init();
 	curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, curl_error_buffer);
 	curl_easy_setopt(curl_handle, CURLOPT_FAILONERROR, 1L);
+    ////kdiy////////
+    // Disabling SSL certificate verification
+    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
+    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
+	if(serverInfo.roomaddress == BufferIO::EncodeUTF8(L"default"))
+	curl_easy_setopt(curl_handle, CURLOPT_URL, epro::format("http://{}:{}/api/getrooms", DEFAULT_SERVER_URL, 18001).data());
+	else
+    ////kdiy////////
 	curl_easy_setopt(curl_handle, CURLOPT_URL, epro::format("{}://{}:{}/api/getrooms", serverInfo.GetProtocolString(), serverInfo.roomaddress, serverInfo.roomlistport).data());
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
 	curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, 60L);
@@ -196,7 +207,9 @@ void ServerLobby::GetRoomsThread() {
 	if(res != CURLE_OK) {
 		if(gGameConfig->logDownloadErrors) {
 			ErrorLog("Error updating the room list:");
-			ErrorLog("Curl error: ({}) {} ({})", res, curl_easy_strerror(res), curl_error_buffer);
+			////kdiy/////////
+			//ErrorLog("Curl error: ({}) {} ({})", res, curl_easy_strerror(res), curl_error_buffer);
+			////kdiy/////////
 		}
 		//error
 		mainGame->PopupMessage(gDataManager->GetSysString(2037));
@@ -307,6 +320,10 @@ void ServerLobby::JoinServer(bool host) {
 const epro::Host& ServerInfo::Resolved() const {
 	if(!resolved) {
 		try {
+			///////kdiy/////////
+			if (address == "default") resolved_address = epro::Host::resolve(DEFAULT_SERVER_URL, 18000);
+			else
+			///////kdiy/////////
 			resolved_address = epro::Host::resolve(address, duelport);
 			resolved = true;
 		} catch(const std::exception& e) {
