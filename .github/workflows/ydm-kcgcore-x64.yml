@@ -30,6 +30,7 @@ jobs:
       VS_GEN: vs2022
       SERVER_URL: 127.0.0.1
       DXSDK_DIR: C:/d3d9sdk/
+      FFMPEG_ROOT: ${{ github.workspace }}/ffmpeg
     steps:
       - name: Checkout current EDOPro client source
         uses: actions/checkout@v4
@@ -57,6 +58,37 @@ jobs:
           & "$root\vcpkg.exe" install fmt curl freetype sqlite3 libevent libgit2 libssh2 openssl libpng bzip2 zlib libjpeg-turbo nlohmann-json openal-soft libflac libvorbis --triplet x64-windows-static
           if ($LASTEXITCODE -ne 0) { throw "Static client dependencies failed to install" }
           & "$root\vcpkg.exe" integrate install
+
+      - name: Stage FFmpeg headers, import libraries and runtime DLLs
+        shell: pwsh
+        run: |
+          $root = "$env:VCPKG_ROOT/installed/x64-windows"
+          New-Item -ItemType Directory -Force -Path "ffmpeg/include", "ffmpeg/lib", "ffmpeg/bin" | Out-Null
+          foreach ($name in @("libavcodec", "libavdevice", "libavfilter", "libavformat", "libavutil", "libswresample", "libswscale")) {
+            Copy-Item "$root/include/$name" "ffmpeg/include" -Recurse -Force
+          }
+          foreach ($name in @("avcodec.lib", "avdevice.lib", "avfilter.lib", "avformat.lib", "avutil.lib", "swresample.lib", "swscale.lib")) {
+            Copy-Item "$root/lib/$name" "ffmpeg/lib" -Force
+          }
+          Get-ChildItem "$root/bin/*.dll" | Copy-Item -Destination "ffmpeg/bin" -Force
+          if (-not (Test-Path "ffmpeg/include/libavcodec/avcodec.h")) { throw "FFmpeg headers missing" }
+          if (-not (Test-Path "ffmpeg/lib/avcodec.lib")) { throw "FFmpeg import library missing" }
+
+      - name: Stage SFML audio dependencies
+        shell: pwsh
+        run: |
+          $root = "$env:VCPKG_ROOT/installed/x64-windows-static"
+          New-Item -ItemType Directory -Force -Path "audio/include", "audio/lib" | Out-Null
+          foreach ($name in @("AL", "FLAC", "vorbis", "ogg")) {
+            Copy-Item "$root/include/$name" "audio/include" -Recurse -Force
+          }
+          foreach ($name in @("FLAC.lib", "vorbisfile.lib", "vorbis.lib", "ogg.lib", "OpenAL32.lib")) {
+            Copy-Item "$root/lib/$name" "audio/lib" -Force
+            if (-not (Test-Path "audio/lib/$name")) { throw "Missing audio library: $name" }
+          }
+          if (-not (Test-Path "audio/include/AL/al.h")) { throw "OpenAL headers missing" }
+          if (-not (Test-Path "audio/include/FLAC/stream_decoder.h")) { throw "FLAC headers missing" }
+          if (-not (Test-Path "audio/include/vorbis/vorbisfile.h")) { throw "Vorbis headers missing" }
 
       - name: Fetch pinned KCGCore and its Lua submodule
         shell: pwsh
