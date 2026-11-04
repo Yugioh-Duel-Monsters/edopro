@@ -17,6 +17,9 @@ enum imgType {
 	ART,
 	FIELD,
 	COVER,
+    ///kdiy///////////
+	CLOSEUP,
+	////kdiy///////////
 	THUMB
 };
 #endif
@@ -32,6 +35,9 @@ public:
 	struct PicSource {
 		std::string url;
 		imgType type;
+		//////kdiy/////////////
+		int hd = 0;
+		//////kdiy/////////////
 	};
 	ImageDownloader();
 	~ImageDownloader();
@@ -50,7 +56,10 @@ private:
 	};
 	using downloading_map = std::map<uint32_t/*code*/, downloadReturn>; /*if the value is not found, the download hasn't started yet*/
 	void DownloadPic();
-	downloading_map downloading_images[3];
+    //////kdiy/////////
+	//downloading_map downloading_images[3];
+    downloading_map downloading_images[4];
+    //////kdiy/////////
 	std::deque<downloadParam> to_download;
 	std::pair<std::atomic<int>, std::atomic<int>> sizes[3];
 	epro::mutex pic_download;
