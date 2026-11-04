@@ -16,7 +16,20 @@ extern bool show_changelog;
 #define EDOPRO_VERSION_PATCH 2
 #define EDOPRO_VERSION_CODENAME "Bagooska"
 #define EDOPRO_VERSION_STRING_DEBUG "EDOPro version " STR(EDOPRO_VERSION_MAJOR) "." STR(EDOPRO_VERSION_MINOR) "." STR(EDOPRO_VERSION_PATCH)
-#define EDOPRO_VERSION_STRING L"Project Ignis: EDOPro | " STR(EDOPRO_VERSION_MAJOR) "." STR(EDOPRO_VERSION_MINOR) "." STR(EDOPRO_VERSION_PATCH) " \"" EDOPRO_VERSION_CODENAME "\""
+/////kupdate///////
+//#define EDOPRO_VERSION_STRING L"Project Ignis: EDOPro | " STR(EDOPRO_VERSION_MAJOR) "." STR(EDOPRO_VERSION_MINOR) "." STR(EDOPRO_VERSION_PATCH) " \"" EDOPRO_VERSION_CODENAME "\""
+#ifdef VIP
+#define KCG_VERSION L"V52-VIP"
+#else
+#define KCG_VERSION L"V52"
+#endif
+#ifdef EK
+#define IS_KCG L"EDOPro-KCG"
+#else
+#define IS_KCG L"EDOPro-KCG_GX"
+#endif
+#define EDOPRO_VERSION_STRING IS_KCG " | " KCG_VERSION
+/////kupdate///////
 #define CLIENT_VERSION ((EDOPRO_VERSION_MAJOR & 0xff) | ((EDOPRO_VERSION_MINOR & 0xff) << 8) | ((OCG_VERSION_MAJOR & 0xff) << 16) | ((OCG_VERSION_MINOR & 0xff) << 24))
 #define GET_CLIENT_VERSION_MAJOR(ver) (ver & 0xff)
 #define GET_CLIENT_VERSION_MINOR(ver) ((ver >> 8) & 0xff)
