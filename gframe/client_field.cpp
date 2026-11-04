@@ -376,11 +376,49 @@ void ClientField::ShowSelectCard(bool buttonok, bool chain) {
 		curstring->enableOverrideColor(false);
 		// image
 		if(curcard->code)
-			mainGame->imageLoading[mainGame->btnCardSelect[i]] = curcard->code;
-		else if(conti_selecting)
+		///kdiy////////
+			//mainGame->imageLoading[mainGame->btnCardSelect[i]] = curcard->code;
+		// else if(conti_selecting)
+		// 	mainGame->imageLoading[mainGame->btnCardSelect[i]] = curcard->chain_code;
+		// else
+		// 	mainGame->btnCardSelect[i]->setImage(mainGame->imageManager.tCover[curcard->controler]);
+		{
+			mainGame->imageLoading[mainGame->btnCardSelect[i]] = curcard->piccode > 0 ? curcard->piccode : curcard->code;
+			mainGame->DrawRealCard(curcard, mainGame->btnCardSelect2[i]);
+		}
+		else if(conti_selecting) {
 			mainGame->imageLoading[mainGame->btnCardSelect[i]] = curcard->chain_code;
-		else
+			mainGame->DrawRealCard(curcard, mainGame->btnCardSelect2[i]);
+		} else {
 			mainGame->btnCardSelect[i]->setImage(mainGame->imageManager.tCover[curcard->controler]);
+			mainGame->btnCardSelect2[i][0]->setImage(0);
+			mainGame->btnCardSelect2[i][1]->setImage(0);
+			mainGame->btnCardSelect2[i][2]->setImage(0);
+			mainGame->btnCardSelect2[i][3]->setImage(0);
+			mainGame->btnCardSelect2[i][4]->setImage(0);
+		}
+		mainGame->btnCardSelect2[i][0]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+		mainGame->btnCardSelect2[i][0]->setPressed(false);
+		mainGame->btnCardSelect2[i][0]->setVisible(true);
+		mainGame->btnCardSelect2[i][1]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+		mainGame->btnCardSelect2[i][1]->setPressed(false);
+		mainGame->btnCardSelect2[i][1]->setVisible(true);
+		mainGame->btnCardSelect2[i][2]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+		mainGame->btnCardSelect2[i][2]->setPressed(false);
+		mainGame->btnCardSelect2[i][2]->setVisible(true);
+		mainGame->btnCardSelect2[i][3]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+		mainGame->btnCardSelect2[i][3]->setPressed(false);
+		mainGame->btnCardSelect2[i][3]->setVisible(true);
+		mainGame->btnCardSelect2[i][4]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+		mainGame->btnCardSelect2[i][4]->setPressed(false);
+		mainGame->btnCardSelect2[i][4]->setVisible(true);
+		mainGame->btnCardSelect2[i][5]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+		mainGame->btnCardSelect2[i][5]->setPressed(false);
+		mainGame->btnCardSelect2[i][5]->setVisible(true);
+		mainGame->btnCardSelect2[i][6]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+		mainGame->btnCardSelect2[i][6]->setPressed(false);
+		mainGame->btnCardSelect2[i][6]->setVisible(true);
+		///kdiy////////
 		mainGame->btnCardSelect[i]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
 		mainGame->btnCardSelect[i]->setPressed(false);
 		mainGame->btnCardSelect[i]->setVisible(true);
@@ -434,15 +472,25 @@ void ClientField::ShowSelectCard(bool buttonok, bool chain) {
 		}
 		curstring->setVisible(true);
 		curstring->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 30, static_cast<irr::s32>(startpos + 120 + i * 125), 50));
+		//////////kdiy/////////
+		mainGame->selectedcard[i]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos - 10 + i * 125), 55, static_cast<irr::s32>(startpos + 10 + i * 125), 75));
+		//////////kdiy/////////
 	}
 	if(selectable_cards.size() <= 5) {
 		for(auto i = selectable_cards.size(); i < 5; ++i) {
 			mainGame->btnCardSelect[i]->setVisible(false);
+			//////////kdiy/////////
+			mainGame->btnCardSelect2[i][0]->setVisible(false);
+			mainGame->btnCardSelect2[i][1]->setVisible(false);
+			mainGame->btnCardSelect2[i][2]->setVisible(false);
+			mainGame->btnCardSelect2[i][3]->setVisible(false);
+			mainGame->btnCardSelect2[i][4]->setVisible(false);
+			//////////kdiy/////////
 			mainGame->stCardPos[i]->setVisible(false);
 		}
 		mainGame->scrCardList->setPos(0);
 		mainGame->scrCardList->setVisible(false);
-	} else {
+	} else {	
 		mainGame->scrCardList->setVisible(true);
 		mainGame->scrCardList->setMin(0);
 		mainGame->scrCardList->setMax(static_cast<irr::s32>(selectable_cards.size() - 5) * 10 + 9);
@@ -466,9 +514,44 @@ void ClientField::ShowChainCard() {
 		auto& curstring = mainGame->stCardPos[i];
 		auto& curcard = selectable_cards[i];
 		if(curcard->code)
-			mainGame->imageLoading[mainGame->btnCardSelect[i]] = curcard->code;
-		else
+		///kdiy////////
+			//mainGame->imageLoading[mainGame->btnCardSelect[i]] = curcard->code;
+		// else
+		// 	mainGame->btnCardSelect[i]->setImage(mainGame->imageManager.tCover[curcard->controler]);
+		{
+			mainGame->imageLoading[mainGame->btnCardSelect[i]] = curcard->piccode > 0 ? curcard->piccode : curcard->code;
+			mainGame->DrawRealCard(curcard, mainGame->btnCardSelect2[i]);
+		}
+		else {
 			mainGame->btnCardSelect[i]->setImage(mainGame->imageManager.tCover[curcard->controler]);
+			mainGame->btnCardSelect2[i][0]->setImage(0);
+			mainGame->btnCardSelect2[i][1]->setImage(0);
+			mainGame->btnCardSelect2[i][2]->setImage(0);
+			mainGame->btnCardSelect2[i][3]->setImage(0);
+			mainGame->btnCardSelect2[i][4]->setImage(0);
+		}
+		mainGame->btnCardSelect2[i][0]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+		mainGame->btnCardSelect2[i][0]->setPressed(false);
+		mainGame->btnCardSelect2[i][0]->setVisible(true);
+		mainGame->btnCardSelect2[i][1]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+		mainGame->btnCardSelect2[i][1]->setPressed(false);
+		mainGame->btnCardSelect2[i][1]->setVisible(true);
+		mainGame->btnCardSelect2[i][2]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+		mainGame->btnCardSelect2[i][2]->setPressed(false);
+		mainGame->btnCardSelect2[i][2]->setVisible(true);
+		mainGame->btnCardSelect2[i][3]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+		mainGame->btnCardSelect2[i][3]->setPressed(false);
+		mainGame->btnCardSelect2[i][3]->setVisible(true);
+		mainGame->btnCardSelect2[i][4]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+		mainGame->btnCardSelect2[i][4]->setPressed(false);
+		mainGame->btnCardSelect2[i][4]->setVisible(true);
+		mainGame->btnCardSelect2[i][5]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+		mainGame->btnCardSelect2[i][5]->setPressed(false);
+		mainGame->btnCardSelect2[i][5]->setVisible(true);
+		mainGame->btnCardSelect2[i][6]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+		mainGame->btnCardSelect2[i][6]->setPressed(false);
+		mainGame->btnCardSelect2[i][6]->setVisible(true);
+		///kdiy////////
 		mainGame->btnCardSelect[i]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
 		mainGame->btnCardSelect[i]->setPressed(false);
 		mainGame->btnCardSelect[i]->setVisible(true);
@@ -493,6 +576,13 @@ void ClientField::ShowChainCard() {
 	if(selectable_cards.size() <= 5) {
 		for(auto i = selectable_cards.size(); i < 5; ++i) {
 			mainGame->btnCardSelect[i]->setVisible(false);
+			///kdiy////////
+			mainGame->btnCardSelect2[i][0]->setVisible(false);
+			mainGame->btnCardSelect2[i][1]->setVisible(false);
+			mainGame->btnCardSelect2[i][2]->setVisible(false);
+			mainGame->btnCardSelect2[i][3]->setVisible(false);
+			mainGame->btnCardSelect2[i][4]->setVisible(false);
+			///kdiy////////
 			mainGame->stCardPos[i]->setVisible(false);
 		}
 		mainGame->scrCardList->setPos(0);
@@ -523,9 +613,43 @@ void ClientField::ShowLocationCard() {
 		auto& curcard = display_cards[i];
 		curstring->enableOverrideColor(false);
 		if(curcard->code)
-			mainGame->imageLoading[mainGame->btnCardDisplay[i]] = curcard->code;
-		else
+		///kdiy////////
+			//mainGame->imageLoading[mainGame->btnCardDisplay[i]] = curcard->code;
+		// else
+		// 	mainGame->btnCardDisplay[i]->setImage(mainGame->imageManager.tCover[curcard->controler]);
+		{
+			mainGame->imageLoading[mainGame->btnCardDisplay[i]] = curcard->piccode > 0 ? curcard->piccode : curcard->code;
+			mainGame->DrawRealCard(curcard, mainGame->btnCardDisplay2[i]);
+		} else {
 			mainGame->btnCardDisplay[i]->setImage(mainGame->imageManager.tCover[curcard->controler]);
+			mainGame->btnCardDisplay2[i][0]->setImage(0);
+			mainGame->btnCardDisplay2[i][1]->setImage(0);
+			mainGame->btnCardDisplay2[i][2]->setImage(0);
+			mainGame->btnCardDisplay2[i][3]->setImage(0);
+			mainGame->btnCardDisplay2[i][4]->setImage(0);
+		}
+		mainGame->btnCardDisplay2[i][0]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+		mainGame->btnCardDisplay2[i][0]->setPressed(false);
+		mainGame->btnCardDisplay2[i][0]->setVisible(true);
+		mainGame->btnCardDisplay2[i][1]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+		mainGame->btnCardDisplay2[i][1]->setPressed(false);
+		mainGame->btnCardDisplay2[i][1]->setVisible(true);
+		mainGame->btnCardDisplay2[i][2]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+		mainGame->btnCardDisplay2[i][2]->setPressed(false);
+		mainGame->btnCardDisplay2[i][2]->setVisible(true);
+		mainGame->btnCardDisplay2[i][3]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+		mainGame->btnCardDisplay2[i][3]->setPressed(false);
+		mainGame->btnCardDisplay2[i][3]->setVisible(true);
+		mainGame->btnCardDisplay2[i][4]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+		mainGame->btnCardDisplay2[i][4]->setPressed(false);
+		mainGame->btnCardDisplay2[i][4]->setVisible(true);
+		mainGame->btnCardDisplay2[i][5]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+		mainGame->btnCardDisplay2[i][5]->setPressed(false);
+		mainGame->btnCardDisplay2[i][5]->setVisible(true);
+		mainGame->btnCardDisplay2[i][6]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+		mainGame->btnCardDisplay2[i][6]->setPressed(false);
+		mainGame->btnCardDisplay2[i][6]->setVisible(true);
+		///kdiy////////
 		mainGame->btnCardDisplay[i]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
 		mainGame->btnCardDisplay[i]->setPressed(false);
 		mainGame->btnCardDisplay[i]->setVisible(true);
@@ -564,6 +688,13 @@ void ClientField::ShowLocationCard() {
 	if(display_cards.size() <= 5) {
 		for(auto i = display_cards.size(); i < 5; ++i) {
 			mainGame->btnCardDisplay[i]->setVisible(false);
+			////kdiy////////
+			mainGame->btnCardDisplay2[i][0]->setVisible(false);
+			mainGame->btnCardDisplay2[i][1]->setVisible(false);
+			mainGame->btnCardDisplay2[i][2]->setVisible(false);
+			mainGame->btnCardDisplay2[i][3]->setVisible(false);
+			mainGame->btnCardDisplay2[i][4]->setVisible(false);
+			////kdiy////////
 			mainGame->stDisplayPos[i]->setVisible(false);
 		}
 		mainGame->scrDisplayList->setPos(0);
@@ -783,7 +914,10 @@ void ClientField::RefreshHandHitboxes() {
 		for(const auto& pcard : _hand)
 			getCardScreenCoordinates(pcard);
 }
-void ClientField::GetCardDrawCoordinates(ClientCard* pcard, irr::core::vector3df* t, irr::core::vector3df* r, bool setTrans) {
+////kdiy///////////
+//void ClientField::GetCardDrawCoordinates(ClientCard* pcard, irr::core::vector3df* t, irr::core::vector3df* r, bool setTrans) {
+void ClientField::GetCardDrawCoordinates(ClientCard* pcard, irr::core::vector3df* t, irr::core::vector3df* r, bool setTrans, irr::core::vector3df trans2) {
+////kdiy///////////
 	const int three_columns = mainGame->dInfo.HasFieldFlag(DUEL_3_COLUMNS_FIELD);
 	static const irr::core::vector3df selfATK{ 0.0f, 0.0f, 0.0f };
 	static const irr::core::vector3df selfDEF{ 0.0f, 0.0f, -irr::core::HALF_PI };
@@ -799,6 +933,9 @@ void ClientField::GetCardDrawCoordinates(ClientCard* pcard, irr::core::vector3df
 		return (pos[0].Pos.Y + pos[2].Pos.Y) / 2.0f;
 	};
 	if(!pcard->location) return;
+	////////kdiy///////////
+	if(pcard->is_attacking) return;
+	////////kdiy///////////
 	const int& controler = pcard->overlayTarget ? pcard->overlayTarget->controler : pcard->controler;
 	const int& sequence = pcard->sequence;
 	const int& location = pcard->location;
@@ -827,22 +964,31 @@ void ClientField::GetCardDrawCoordinates(ClientCard* pcard, irr::core::vector3df
 		const auto pos = GetPos();
 		if(!pos)
 			return;
-		t->X = GetMiddleX(pos);
-		t->Y = GetMiddleY(pos);
-		t->Z = 0.01f;
-		if(location == LOCATION_MZONE) {
+		////////kdiy///////////
+		// t->X = GetMiddleX(pos);
+		// t->Y = GetMiddleY(pos);
+		// t->Z = 0.01f;
+		//if(location == LOCATION_MZONE) {
+		t->X = GetMiddleX(pos) + trans2.X;
+		t->Y = GetMiddleY(pos) + trans2.Y;
+		t->Z = 0.01f + trans2.Z;
+		if((location == LOCATION_MZONE && !pcard->is_sanct) || (location == LOCATION_SZONE && pcard->is_orica)) {
+		////////kdiy///////////
 			if(controler == 0)
 				*r = (pcard->position & POS_DEFENSE) ? selfDEF : selfATK;
 			else
 				*r = (pcard->position & POS_DEFENSE) ? oppoDEF : oppoATK;
 		} else if (location == LOCATION_OVERLAY)
 			*r = (pcard->overlayTarget->controler == 0) ? selfATK : oppoATK;
-		else
+        else
 			*r = (controler == 0) ? selfATK : oppoATK;
 		if(((location & (LOCATION_GRAVE | LOCATION_OVERLAY)) == 0) && ((location == LOCATION_DECK && deck_reversed == pcard->is_reversed) ||
 			(location != LOCATION_DECK && pcard->position & POS_FACEDOWN))) {
 			*r += facedown;
-			if(location == LOCATION_MZONE && pcard->position & POS_DEFENSE)
+			////////kdiy///////////
+			//if(location == LOCATION_MZONE && pcard->position & POS_DEFENSE)
+			if(((location == LOCATION_MZONE && !pcard->is_sanct) || (location == LOCATION_SZONE && pcard->is_orica)) && (pcard->position & POS_DEFENSE))
+			////////kdiy///////////
 				r->Y = irr::core::PI + 0.001f;
 		}
 		switch(location) {
@@ -852,14 +998,23 @@ void ClientField::GetCardDrawCoordinates(ClientCard* pcard, irr::core::vector3df
 			case LOCATION_EXTRA:
 			case LOCATION_SKILL: {
 				if(!gGameConfig->topdown_view)
-					t->Z += 0.01f * sequence;
+				    ////////kdiy///////////
+					//t->Z += 0.01f * sequence;
+					t->Z += (0.01f + trans2.Z) * sequence;
+				    ////////kdiy///////////
 				break;
 			}
 			case LOCATION_OVERLAY: {
+				////////kdiy///////////
+				// if(controler == 0)
+				// 	*t = { t->X - 0.12f + 0.06f * sequence, t->Y + 0.06f, 0.005f + pcard->sequence * 0.0001f };
+				// else
+				// 	*t = { t->X + 0.12f - 0.06f * sequence, t->Y - 0.06f, 0.005f + pcard->sequence * 0.0001f };
 				if(controler == 0)
-					*t = { t->X - 0.12f + 0.06f * sequence, t->Y + 0.06f, 0.005f + pcard->sequence * 0.0001f };
+					*t = { (t->X + trans2.X) - 0.12f + 0.06f * sequence, (t->Y + trans2.Y) + 0.06f, 0.005f + pcard->sequence * 0.0001f };
 				else
-					*t = { t->X + 0.12f - 0.06f * sequence, t->Y - 0.06f, 0.005f + pcard->sequence * 0.0001f };
+					*t = { (t->X + trans2.X) + 0.12f - 0.06f * sequence, (t->Y + trans2.Y) - 0.06f, 0.005f + pcard->sequence * 0.0001f };
+				////////kdiy///////////
 				break;
 			}
 		}
@@ -889,42 +1044,64 @@ void ClientField::GetCardDrawCoordinates(ClientCard* pcard, irr::core::vector3df
 		float xoff2 = (sequence * val) / (count - 1);
 		if(three_columns) xoff2 += 0.8f;
 		auto SetXCoord = [&] {
+			////////kdiy///////////
+			// if(controler == 0) {
+			// 	if(count <= max)
+			// 		t->X = 1.55f + xoff1;
+			// 	else
+			// 		t->X = 1.9f + xoff2;
+			// } else {
+			// 	if(count <= max)
+			// 		t->X = 6.25f - xoff1;
+			// 	else
+			// 		t->X = 5.9f - xoff2;
+			// 	if(gGameConfig->topdown_view)
+			// 		t->X -= 0.378f;
+			// }
+			// if(gGameConfig->topdown_view)
+			// 	t->X += 0.3f;
 			if(controler == 0) {
 				if(count <= max)
-					t->X = 1.55f + xoff1;
+					t->X = 1.55f + xoff1 + trans2.X;
 				else
-					t->X = 1.9f + xoff2;
+					t->X = 1.9f + xoff2 + trans2.X;
 			} else {
 				if(count <= max)
-					t->X = 6.25f - xoff1;
+					t->X = 6.25f - xoff1 + trans2.X;
 				else
-					t->X = 5.9f - xoff2;
+					t->X = 5.9f - xoff2 + trans2.X;
 				if(gGameConfig->topdown_view)
-					t->X -= 0.378f;
+					t->X -= 0.378f + trans2.X;
 			}
 			if(gGameConfig->topdown_view)
-				t->X += 0.3f;
+				t->X += 0.3f + trans2.X;
+			////////kdiy///////////
 		};
 		auto SetYCoord = [&] {
 			if(gGameConfig->topdown_view) {
 				static constexpr auto base_y = 2.5f;
+			////////kdiy///////////
 				if(controler == 0)
-					t->Y = base_y;
+					t->Y = base_y + trans2.Y;
 				else
-					t->Y = base_y * -1.0f;
+					t->Y = base_y * -1.0f + trans2.Y;
 				return;
 			}
 			if(controler == 0)
-				t->Y = 4.0f;
+				t->Y = 4.0f + trans2.Y;
 			else
-				t->Y = -3.4f;
+				t->Y = -3.4f + trans2.Y;
+			////////kdiy///////////
 
 		};
 		const float zoff1 = gGameConfig->topdown_view ? 3.0f : 0.5f;
 		const float zoff2 = (controler == 0) ? (0.001f * sequence) : (-0.001f * sequence);
 		SetXCoord();
 		SetYCoord();
-		t->Z = zoff1 + zoff2;
+		////////kdiy///////////
+		//t->Z = zoff1 + zoff2;
+		t->Z = zoff1 + zoff2 + trans2.Z;
+		////////kdiy///////////
 		SetHoverState();
 		if(gGameConfig->topdown_view) {
 			if(controler == 0)
@@ -947,12 +1124,19 @@ void ClientField::GetCardDrawCoordinates(ClientCard* pcard, irr::core::vector3df
 			getCardScreenCoordinates(pcard);
 	}
 }
-void ClientField::MoveCard(ClientCard* pcard, float frame) {
+////kdiy///////////
+//void ClientField::MoveCard(ClientCard* pcard, float frame) {
+void ClientField::MoveCard(ClientCard* pcard, float frame, irr::core::vector3df trans2) {
+////kdiy///////////
 	float milliseconds = frame * 1000.0f / 60.0f;
 	irr::core::vector3df trans = pcard->curPos;
 	irr::core::vector3df rot = pcard->curRot;
-	GetCardDrawCoordinates(pcard, &trans, &rot);
+	// ////kdiy///////////
+    // GetCardDrawCoordinates(pcard, &trans, &rot);
+	// pcard->dPos = (trans - pcard->curPos) / milliseconds;
+    GetCardDrawCoordinates(pcard, &trans, &rot, false, trans2);
 	pcard->dPos = (trans - pcard->curPos) / milliseconds;
+	////kdiy///////////
 	float diff = rot.X - pcard->curRot.X;
 	while (diff < 0) diff += irr::core::PI * 2;
 	while (diff > irr::core::PI * 2)
@@ -979,6 +1163,17 @@ void ClientField::MoveCard(ClientCard* pcard, float frame) {
 	pcard->refresh_on_stop = true;
 	pcard->aniFrame = milliseconds;
 }
+////kdiy///////////
+void ClientField::MoveCard(ClientCard* pcard, irr::core::vector3df trans, float frame, float tune) {
+	float milliseconds = frame * 1000.0f / 60.0f;
+	pcard->dPos = (trans - pcard->curPos) / milliseconds;
+    pcard->dPos.X = pcard->dPos.X * tune;
+    pcard->dPos.Y = pcard->dPos.Y * tune;
+	pcard->is_moving = true;
+	pcard->refresh_on_stop = true;
+	pcard->aniFrame = milliseconds;
+}
+////kdiy///////////
 void ClientField::FadeCard(ClientCard* pcard, float alpha, float frame) {
 	float milliseconds = frame * 1000.0f / 60.0f;
 	pcard->dAlpha = (alpha - pcard->curAlpha) / milliseconds;
@@ -1005,6 +1200,10 @@ bool ClientField::ShowSelectSum() {
 		}
 	}
 	mainGame->wCardSelect->setVisible(false);
+    //////////kdiy/////////
+    for(int i = 0; i < 5; ++i)
+        mainGame->selectedcard[i]->setVisible(false);
+    //////////kdiy/////////
 	mainGame->stCardListTip->setVisible(false);
 	if(panelmode) {
 		mainGame->dField.ShowSelectCard(select_ready);
