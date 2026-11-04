@@ -18,6 +18,12 @@ namespace ygo {
 struct WindBot {
 	std::wstring name;
 	std::wstring deck;
+	/////kdiy//////
+    bool vip = false;
+	std::wstring dialog;
+	std::wstring deckpath = L"";
+	std::wstring mode;
+	/////kdiy//////
 	std::wstring deckfile;
 	int difficulty;
 	std::set<int> masterRules;
@@ -28,8 +34,12 @@ struct WindBot {
 	using launch_ret_t = pid_t;
 	static epro::path_string executablePath;
 #endif
-	launch_ret_t Launch(int port, epro::wstringview pass, bool chat, int hand, const wchar_t* overridedeck) const;
-	std::wstring GetLaunchParameters(int port, epro::wstringview pass, bool chat, int hand, const wchar_t* overridedeck) const;
+    ////kdiy//////
+	//launch_ret_t Launch(int port, epro::wstringview pass, bool chat, int hand, const wchar_t* overridedeck) const;
+    //std::wstring GetLaunchParameters(int port, epro::wstringview pass, bool chat, int hand, const wchar_t* overridedeck) const;
+	launch_ret_t Launch(int port, epro::wstringview pass, bool chat, int hand, const wchar_t* overridedeck, int seed) const;
+	std::wstring GetLaunchParameters(int port, epro::wstringview pass, bool chat, int hand, const wchar_t* overridedeck, int seed) const;
+	////kdiy//////
 
 #if EDOPRO_WINDOWS || EDOPRO_MACOS || EDOPRO_LINUX
 	static nlohmann::ordered_json databases;
