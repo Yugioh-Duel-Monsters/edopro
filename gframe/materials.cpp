@@ -26,11 +26,34 @@ inline void SetS3DVertex(Materials::QuadVertex v, irr::f32 x1, irr::f32 y1, irr:
 
 Materials::Materials() {
 	SetS3DVertex(vCardFront, -0.35f, -0.5f, 0.35f, 0.5f, 0, 1, 0, 0, 1, 1);
-	SetS3DVertex(vCardOutline, -0.375f, -0.54f, 0.37f, 0.54f, 0, 1, 0, 0, 1, 1);
-	SetS3DVertex(vCardOutliner, 0.37f, -0.54f, -0.375f, 0.54f, 0, 1, 0, 0, 1, 1);
+	///////kdiy//////
+	// SetS3DVertex(vCardOutline, -0.375f, -0.54f, 0.37f, 0.54f, 0, 1, 0, 0, 1, 1);
+	// SetS3DVertex(vCardOutliner, 0.37f, -0.54f, -0.375f, 0.54f, 0, 1, 0, 0, 1, 1);
+	// SetS3DVertex(vCardBack, 0.35f, -0.5f, -0.35f, 0.5f, 0, -1, 0, 0, 1, 1);
+	// SetS3DVertex(vSymbol, -0.35f, -0.35f, 0.35f, 0.35f, 0.01f, 1, 0, 0, 1, 1);
+	//SetS3DVertex(vNegate, -0.25f, -0.28f, 0.25f, 0.22f, 0.01f, 1, 0, 0, 1, 1);
+	SetS3DVertex(vCardFront2, -0.40f, -0.56f, 0.40f, 0.56f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vCardOutline, -0.36f, -0.52f, 0.355f, 0.52f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vCardOutliner, 0.355f, -0.52f, -0.36f, 0.52f, 0, 1, 0, 0, 1, 1);
+    SetS3DVertex(vCardOutline2, -0.415f, -0.58f, 0.41f, 0.58f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vCardOutliner2, 0.41f, -0.58f, -0.415f, 0.58f, 0, 1, 0, 0, 1, 1);
 	SetS3DVertex(vCardBack, 0.35f, -0.5f, -0.35f, 0.5f, 0, -1, 0, 0, 1, 1);
-	SetS3DVertex(vSymbol, -0.35f, -0.35f, 0.35f, 0.35f, 0.01f, 1, 0, 0, 1, 1);
-	SetS3DVertex(vNegate, -0.25f, -0.28f, 0.25f, 0.22f, 0.01f, 1, 0, 0, 1, 1);
+	SetS3DVertex(vCardBack2, 0.40f, -0.56f, -0.40f, 0.56f, 0, -1, 0, 0, 1, 1);
+	SetS3DVertex(vSymbol, -0.42f, -0.42f, 0.42f, 0.42f, 0.01f, 1, 0, 0, 1, 1);
+	SetS3DVertex(vPScale, -0.32f, -0.6, 0.32, 0.6f, 0.01f, 1, 0, 0, 1, 1);
+    SetS3DVertex(vCloseup, 2.3f, -4.0f, 6.7f, 4.0f, 0.01f, 1, 0, 0, 1, 1);
+	SetS3DVertex(vAttack, -0.34f, -0.4f, 0.34f, 0.4f, 0.01f, 1, 0, 0, 1, 1);
+	SetS3DVertex(vAttack2, -0.38f, -0.532f, 0.38f, 0.532f, 0.01f, 1, 0, 0, 1, 1);
+	SetS3DVertex(vAttack3, -0.68f, -0.8f, 0.68f, 0.8f, 0.01f, 1, 0, 0, 1, 1);
+	SetS3DVertex(vAttack4, -0.78f, -0.92f, 0.78f, 0.92f, 0.01f, 1, 0, 0, 1, 1);
+    SetS3DVertex(vNegate, -0.54f, -0.57f, 0.54f, 0.57f, 0.01f, 1, 0, 0, 1, 1);
+	SetS3DVertex(vHint, -0.25f, -0.25f, 0.25f, 0.25f, 0.5f, 1, 0, 0, 1, 1);
+	SetS3DVertex(vXyz, -0.1f, -0.1f, 0.1f, 0.1f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vXyztrail, -0.05f, -0.05f, 0.05f, 0.05f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vCXyz, -0.2f, -0.2f, 0.2f, 0.2f, 0.05f, 1, 0, 0, 1, 1);
+	SetS3DVertex(vLinkZone, -0.65f, -0.8f, 0.65f, 0.8f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vLinkZone2, -0.65f, -0.8f, 0.65f, 0.8f, 0.02f, 1, 0, 0, 1, 1);
+	///////kdiy//////
 	SetS3DVertex(vChainNum, -0.35f, -0.35f, 0.35f, 0.35f, 0, 1, 0, 0, 0.19375f, 0.2421875f);
 	SetS3DVertex(vActivate, -0.5f, -0.5f, 0.5f, 0.5f, 0, 1, 0, 0, 1, 1);
 	SetS3DVertex(vField, -1.0f, -4.0f, 9.0f, 4.0f, 0, 1, 0, 0, 1, 1);
@@ -140,6 +163,65 @@ Materials::Materials() {
 	SetS3DVertex(vFieldSzone[0][1][1][7], 2.1f, -1.4f, 1.3f, -2.6f, 0, 1, 0, 0, 0, 0);
 	SetS3DVertex(vFieldSzone[1][1][1][7], 1.1f, -0.1f, 0.3f, -1.3f, 0, 1, 0, 0, 0, 0);
 
+	///////kdiy//////
+	for(int i = 0; i < 5; ++i)
+		SetS3DVertex(vFieldMzone_2[0][i], 1.2f + i * 1.1f, 0.8f, 2.3f + i * 1.1f, 2.0f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vFieldMzone_2[0][5], 2.3f, -0.6f, 3.4f, 0.6f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vFieldMzone_2[0][6], 4.5f, -0.6f, 5.6f, 0.6f, 0, 1, 0, 0, 1, 1);
+	for (int i = 0; i < 5; ++i) {
+		SetS3DVertex(vFieldSzone_2[0][0][0][i], 1.2f + i * 1.1f, 2.0f, 2.3f + i * 1.1f, 3.2f, 0, 1, 0, 0, 1, 1);
+		SetS3DVertex(vFieldSzone_2[1][0][0][i], 1.2f + i * 1.1f, 2.0f, 2.3f + i * 1.1f, 3.2f, 0, 1, 0, 0, 1, 1);
+		SetS3DVertex(vFieldSzone_2[0][1][0][i], 1.2f + i * 1.1f, 2.0f, 2.3f + i * 1.1f, 3.2f, 0, 1, 0, 0, 1, 1);
+		SetS3DVertex(vFieldSzone_2[1][1][0][i], 1.2f + i * 1.1f, 2.0f, 2.3f + i * 1.1f, 3.2f, 0, 1, 0, 0, 1, 1);
+	}
+	//field
+	SetS3DVertex(vFieldSzone_2[0][0][0][5], 0.2f, 0.1f, 1.0f, 1.3f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vFieldSzone_2[1][0][0][5], 0.2f, 1.4f, 1.0f, 2.6f, 0, 1, 0, 0, 1, 1);
+	//field speed duel
+	SetS3DVertex(vFieldSzone_2[0][1][0][5], 1.3f, 0.1f, 2.1f, 1.3f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vFieldSzone_2[1][1][0][5], 1.3f, 1.4f, 2.1f, 2.6f, 0, 1, 0, 0, 1, 1);
+	//LScale
+	SetS3DVertex(vFieldSzone_2[0][0][0][6], 0.2f, 1.4f, 1.0f, 2.6f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vFieldSzone_2[1][0][0][6], 0.2f, 0.1f, 1.0f, 1.3f, 0, 1, 0, 0, 1, 1);
+	//LScale speed duel
+	SetS3DVertex(vFieldSzone_2[0][1][0][6], 1.3f, 1.4f, 2.1f, 2.6f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vFieldSzone_2[1][1][0][6], 1.3f, 0.1f, 2.1f, 1.3f, 0, 1, 0, 0, 1, 1);
+	//RScale
+	SetS3DVertex(vFieldSzone_2[0][0][0][7], 6.9f, 1.4f, 7.7f, 2.6f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vFieldSzone_2[1][0][0][7], 7.9f, 0.1f, 8.7f, 1.3f, 0, 1, 0, 0, 1, 1);
+	//RScale speed duel
+	SetS3DVertex(vFieldSzone_2[0][1][0][7], 5.8f, 1.4f, 6.6f, 2.6f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vFieldSzone_2[1][1][0][7], 6.8f, 0.1f, 7.6f, 1.3f, 0, 1, 0, 0, 1, 1);
+
+	for(int i = 0; i < 5; ++i)
+		SetS3DVertex(vFieldMzone_2[1][i], 6.7f - i * 1.1f, -0.8f, 5.6f - i * 1.1f, -2.0f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vFieldMzone_2[1][5], 5.6f, 0.6f, 4.5f, -0.6f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vFieldMzone_2[1][6], 3.4f, 0.6f, 2.3f, -0.6f, 0, 1, 0, 0, 1, 1);
+	for (int i = 0; i < 5; ++i) {
+		SetS3DVertex(vFieldSzone_2[0][0][1][i], 6.7f - i * 1.1f, -2.0f, 5.6f - i * 1.1f, -3.2f, 0, 1, 0, 0, 1, 1);
+		SetS3DVertex(vFieldSzone_2[1][0][1][i], 6.7f - i * 1.1f, -2.0f, 5.6f - i * 1.1f, -3.2f, 0, 1, 0, 0, 1, 1);
+		SetS3DVertex(vFieldSzone_2[0][1][1][i], 6.7f - i * 1.1f, -2.0f, 5.6f - i * 1.1f, -3.2f, 0, 1, 0, 0, 1, 1);
+		SetS3DVertex(vFieldSzone_2[1][1][1][i], 6.7f - i * 1.1f, -2.0f, 5.6f - i * 1.1f, -3.2f, 0, 1, 0, 0, 1, 1);
+	}
+	//field
+	SetS3DVertex(vFieldSzone_2[0][0][1][5], 7.7f, -0.1f, 6.9f, -1.3f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vFieldSzone_2[1][0][1][5], 7.7f, -1.4f, 6.9f, -2.6f, 0, 1, 0, 0, 1, 1);
+	//field speed duel
+	SetS3DVertex(vFieldSzone_2[0][1][1][5], 6.6f, -0.1f, 5.8f, -1.3f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vFieldSzone_2[1][1][1][5], 6.6f, -1.4f, 5.8f, -2.6f, 0, 1, 0, 0, 1, 1);
+	//LScale
+	SetS3DVertex(vFieldSzone_2[0][0][1][6], 7.7f, -1.4f, 6.9f, -2.6f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vFieldSzone_2[1][0][1][6], 7.7f, -0.1f, 6.9f, -1.3f, 0, 1, 0, 0, 1, 1);
+	//LScale speed duel
+	SetS3DVertex(vFieldSzone_2[0][1][1][6], 6.6f, -1.4f, 5.8f, -2.6f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vFieldSzone_2[1][1][1][6], 6.6f, -0.1f, 5.8f, -1.3f, 0, 1, 0, 0, 1, 1);
+	//RScale
+	SetS3DVertex(vFieldSzone_2[0][0][1][7], 1.0f, -1.4f, 0.2f, -2.6f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vFieldSzone_2[1][0][1][7], 0.0f, -0.1f, -0.8f, -1.3f, 0, 1, 0, 0, 1, 1);
+	//RScale speed duel
+	SetS3DVertex(vFieldSzone_2[0][1][1][7], 2.1f, -1.4f, 1.3f, -2.6f, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vFieldSzone_2[1][1][1][7], 1.1f, -0.1f, 0.3f, -1.3f, 0, 1, 0, 0, 1, 1);
+	///////kdiy//////
 	//conti_act
 	vFieldContiAct[0][0].set(-0.8f, 0.1f, 0.0f);
 	vFieldContiAct[0][1].set(0.0f, 0.1f, 0.0f);
