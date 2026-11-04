@@ -9,6 +9,18 @@
 #include "utils.h"
 #include "libgit2.hpp"
 #include "fmt.h"
+////kdiy////////
+#include <regex>
+// Callback function to always accept certificates
+static int cert_verify_callback(git_cert *cert, int valid, const char *host, void *payload) {
+    (void)cert;    // Unused
+    (void)valid;   // Unused
+    (void)host;    // Unused
+    (void)payload; // Unused
+    // Bypass SSL certificate validation
+    return 0; // Return 0 to indicate certificate is always valid
+}
+////kdiy////////
 
 static_assert(LIBGIT2_VER_MAJOR > 0 || LIBGIT2_VER_MINOR >= 23, "libgit2 0.23 or newer is required");
 
@@ -156,6 +168,10 @@ std::map<std::string, int> RepoManager::GetRepoStatus() {
 
 void RepoManager::LoadRepositoriesFromJson(const nlohmann::json& configs) {
 	auto cit = configs.find("repos");
+	////kdiy//////////
+	std::string tmp_repo3 = "./config/languages";
+	bool repo3chk = false;
+	////kdiy//////////
 	if(cit != configs.end() && cit->is_array()) {
 		for(auto& obj : *cit) {
 			{
@@ -164,7 +180,7 @@ void RepoManager::LoadRepositoriesFromJson(const nlohmann::json& configs) {
 					continue;
 			}
 			GitRepo tmp_repo;
-			JSON_SET_IF_VALID(not_git_repo, boolean, bool);
+            JSON_SET_IF_VALID(not_git_repo, boolean, bool);
 			JSON_SET_IF_VALID(url, string, std::string);
 			if(!tmp_repo.not_git_repo && tmp_repo.url.empty())
 				continue;
@@ -183,10 +199,49 @@ void RepoManager::LoadRepositoriesFromJson(const nlohmann::json& configs) {
 			if(tmp_repo.has_core)
 				JSON_SET_IF_VALID(core_path, string, std::string);
 #endif
-			if(tmp_repo.Sanitize())
+            ////kdiy//////////
+            // if(tmp_repo.Sanitize())
+			// 	AddRepo(std::move(tmp_repo));
+            {
+                auto it = obj.find("admin_update");
+				    if(it != obj.end() && it->is_boolean() && !it->get<bool>())
+					    tmp_repo.should_update = false;
+					else
+						tmp_repo.should_update = true;
+            }
+			if(tmp_repo.repo_path == tmp_repo3) {
+				if(tmp_repo.repo_name.empty())
+					tmp_repo.repo_name = "Language";
+				tmp_repo.url = "https://gitcode.com/edokcg/Ch.git";
+				tmp_repo.data_path = "";
+				tmp_repo.is_language = true;
+				repo3chk = true;
+				if(tmp_repo.Sanitize() && gGameConfig->system_engine)
+					AddRepo(std::move(tmp_repo));
+				continue;
+			}
+			if(tmp_repo.url.substr(0,8) == "default/")
+			    tmp_repo.url = "https://gitcode.com/edokcg" + tmp_repo.url.substr(7,tmp_repo.url.length());
+			else
+                continue;
+            if(tmp_repo.Sanitize() && gGameConfig->system_engine)
 				AddRepo(std::move(tmp_repo));
-		}
+		    ////kdiy//////////
+        }
 	}
+	////kdiy//////////
+	if(cit == configs.end() || !repo3chk) {
+		GitRepo repo1;
+		repo1.repo_name = "Language";
+		repo1.url = "https://gitcode.com/edokcg/Ch.git";
+		repo1.repo_path = tmp_repo3;
+		repo1.data_path = "";
+		repo1.is_language = true;
+		repo1.should_update = true;
+		if(repo1.Sanitize() && gGameConfig->system_engine)
+			AddRepo(std::move(repo1));
+	}
+	////kdiy//////////
 }
 
 bool RepoManager::TerminateIfNothingLoaded() {
@@ -300,6 +355,9 @@ void RepoManager::CloneOrUpdateTask() {
 					try {
 						// git fetch
 						git_fetch_options fetchOpts = GIT_FETCH_OPTIONS_INIT;
+						////kdiy//////////
+						fetchOpts.callbacks.certificate_check = cert_verify_callback;
+						////kdiy//////////
 						fetchOpts.callbacks.transfer_progress = RepoManager::FetchCb;
 						fetchOpts.callbacks.payload = &payload;
 						auto remote = Git::MakeUnique(git_remote_lookup, repo.get(), "origin");
@@ -318,7 +376,10 @@ void RepoManager::CloneOrUpdateTask() {
 					} catch(const std::exception& e) {
 						history.partial_history.clear();
 						history.warning = e.what();
-						ErrorLog("Warning occurred in repo {}: {}", url, history.warning);
+						////kdiy//////////
+						//ErrorLog("Warning occurred in repo {}: {}", url, history.warning);
+						ErrorLog("Warning occurred in repo {}: {}",  _repo.repo_name, history.warning);
+						////kdiy//////////
 					}
 				}
 				if(history.partial_history.size() >= MAX_HISTORY_LENGTH) {
@@ -332,6 +393,9 @@ void RepoManager::CloneOrUpdateTask() {
 				Utils::DeleteDirectory(Utils::ToPathString(path + "/"));
 				// git clone <url> <path>
 				git_clone_options cloneOpts = GIT_CLONE_OPTIONS_INIT;
+                ////kdiy//////////
+                cloneOpts.fetch_opts.callbacks.certificate_check = cert_verify_callback;
+                ////kdiy//////////
 				cloneOpts.fetch_opts.callbacks.transfer_progress = RepoManager::FetchCb;
 				cloneOpts.fetch_opts.callbacks.payload = &payload;
 				cloneOpts.checkout_opts.progress_cb = RepoManager::CheckoutCb;
@@ -344,7 +408,10 @@ void RepoManager::CloneOrUpdateTask() {
 			SetRepoPercentage(path, 100);
 		} catch(const std::exception& e) {
 			history.error = e.what();
-			ErrorLog("Exception occurred in repo {}: {}", _repo.url, history.error);
+			////kdiy//////////
+			//ErrorLog("Exception occurred in repo {}: {}", _repo.url, history.error);
+			ErrorLog("Exception occurred in repo {}: {}", _repo.repo_name, history.error);
+			////kdiy//////////
 		}
 		lck.lock();
 		_repo.history = std::move(history);
