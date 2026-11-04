@@ -26,10 +26,12 @@
 namespace ygo {
 
 void DataHandler::LoadDatabases() {
-	if(Utils::FileExists(EPRO_TEXT("./cards.cdb"))) {
-		if(dataManager->LoadDB(EPRO_TEXT("./cards.cdb")))
-			WindBot::AddDatabase(EPRO_TEXT("./cards.cdb"));
-	}
+	/////kdiy///////////
+	// if(Utils::FileExists(EPRO_TEXT("./cards.cdb"))) {
+	// 	if(dataManager->LoadDB(EPRO_TEXT("./cards.cdb")))
+	// 		WindBot::AddDatabase(EPRO_TEXT("./cards.cdb"));
+	// }
+	/////kdiy///////////
 	for(auto& file : Utils::FindFiles(EPRO_TEXT("./expansions/"), { EPRO_TEXT("cdb") }, 2)) {
 		epro::path_string db = EPRO_TEXT("./expansions/") + file;
 		if(dataManager->LoadDB(db))
@@ -60,6 +62,15 @@ void DataHandler::LoadPicUrls() {
 				try {
 					const auto& type = obj.at("type").get_ref<const std::string&>();
 					const auto& url = obj.at("url").get_ref<const std::string&>();
+					//kdiy//////
+					if(url == "jp") {
+#ifdef DEFAULT_JHDPIC_URL
+                        imageDownloader->AddDownloadResource({ DEFAULT_JHDPIC_URL, imgType::ART, 1 });
+#else
+					continue;
+#endif
+					} else
+					//kdiy//////
 					if(url == "default") {
 						if(type == "pic") {
 #ifdef DEFAULT_PIC_URL
@@ -80,10 +91,29 @@ void DataHandler::LoadPicUrls() {
 							continue;
 #endif
 						}
+						//kdiy//////
+						else if(type == "closeup") {
+#ifdef DEFAULT_CLOSEUP_URL
+							imageDownloader->AddDownloadResource({ DEFAULT_CLOSEUP_URL, imgType::CLOSEUP });
+#else
+							continue;
+#endif
+						}
+						//kdiy//////
 					} else {
-						imageDownloader->AddDownloadResource({ url, type == "field" ?
+						//kdiy//////
+						// imageDownloader->AddDownloadResource({ url, type == "field" ?
+						// 										imgType::FIELD : (type == "pic") ?
+						// 										imgType::ART : imgType::COVER });
+						std::string url2 = url;
+						if(url.substr(0,8) == "default/")
+			    			url2 = epro::format("http://{}:3000/{}", DEFAULT_SERVER_URL, url.substr(7, url.length()));
+						imageDownloader->AddDownloadResource({ url2, type == "field" ?
 																imgType::FIELD : (type == "pic") ?
-																imgType::ART : imgType::COVER });
+																imgType::ART : (type == "closeup") ?
+																imgType::CLOSEUP :  imgType::COVER,
+																type == "hdpic" ? 1 : 0});
+						//kdiy//////
 					}
 				}
 				catch(const std::exception& e) {
@@ -96,12 +126,44 @@ void DataHandler::LoadPicUrls() {
 void DataHandler::LoadZipArchives() {
 	irr::io::IFileArchive* tmp_archive = nullptr;
 	for(auto& file : Utils::FindFiles(EPRO_TEXT("./expansions/"), { EPRO_TEXT("zip") })) {
-		filesystem->addFileArchive(epro::format(EPRO_TEXT("./expansions/{}"), file).data(), true, false, irr::io::EFAT_ZIP, "", &tmp_archive);
+		////////kdiy////////
+		//filesystem->addFileArchive(epro::format(EPRO_TEXT("./expansions/{}"), file).data(), true, false, irr::io::EFAT_ZIP, "", &tmp_archive);
+#if defined(Zip)
+		filesystem->addFileArchive(epro::format(EPRO_TEXT("./expansions/{}"), file).data(), false, false, irr::io::EFAT_ZIP, Zip, &tmp_archive);
+#else
+		filesystem->addFileArchive(epro::format(EPRO_TEXT("./expansions/{}"), file).data(), false, false, irr::io::EFAT_ZIP, "", &tmp_archive);
+#endif
+		////////kdiy////////
+		if(tmp_archive) {
+			Utils::archives.emplace_back(tmp_archive);
+		}
+	}
+	for(auto& file : Utils::FindFiles(EPRO_TEXT("./sound/character/"), { EPRO_TEXT("zip") })) {
+#if defined(Zip)
+		filesystem->addFileArchive(epro::format(EPRO_TEXT("./sound/character/{}"), file).data(), false, false, irr::io::EFAT_ZIP, Zip, &tmp_archive);
+#else
+		filesystem->addFileArchive(epro::format(EPRO_TEXT("./sound/character/{}"), file).data(), false, false, irr::io::EFAT_ZIP, "", &tmp_archive);
+#endif
 		if(tmp_archive) {
 			Utils::archives.emplace_back(tmp_archive);
 		}
 	}
 }
+////////kdiy////////
+void DataHandler::LoadKZipArchives() {
+	irr::io::IFileArchive* tmp_archive = nullptr;
+	for(auto& file : Utils::FindFiles(EPRO_TEXT("./repositories/"), { EPRO_TEXT("zip") })) {
+#if defined(Zip)
+		filesystem->addFileArchive(epro::format(EPRO_TEXT("./repositories/{}"), file).data(), false, false, irr::io::EFAT_ZIP, Zip, &tmp_archive);
+#else
+		filesystem->addFileArchive(epro::format(EPRO_TEXT("./repositories/{}"), file).data(), false, false, irr::io::EFAT_ZIP, "", &tmp_archive);
+#endif
+		if(tmp_archive) {
+			Utils::archives.emplace_back(tmp_archive);
+		}
+	}
+}
+////////kdiy////////
 DataHandler::DataHandler() {
 	configs = std::make_unique<GameConfig>();
 	gGameConfig = configs.get();
@@ -156,10 +218,19 @@ DataHandler::DataHandler() {
 	}
 	sounds = std::make_unique<SoundManager>(configs->soundVolume / 100.0, configs->musicVolume / 100.0, configs->enablesound, configs->enablemusic, sound_backend);
 	gitManager->ToggleReadOnly(cli_args[REPOS_READ_ONLY].enabled);
+	////kdiy//////////
+	if(Utils::FileExists(EPRO_TEXT("./config/user_configs.json")))
+	////kdiy//////////
 	gitManager->LoadRepositoriesFromJson(configs->user_configs);
+	////kdiy//////////
+	else
+	////kdiy//////////
 	gitManager->LoadRepositoriesFromJson(configs->configs);
 	if(gitManager->TerminateIfNothingLoaded())
 		deckManager->StopDummyLoading();
+	////kdiy//////////
+	LoadKZipArchives();
+	////kdiy//////////
 	imageDownloader = std::make_unique<ImageDownloader>();
 	LoadDatabases();
 	LoadPicUrls();
