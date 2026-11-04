@@ -2,8 +2,6 @@ name: YDM KCGCore Windows x64 integration build
 
 on:
   workflow_dispatch:
-  pull_request:
-    branches: [master]
   push:
     branches:
       - ydm/kcgcore-x64-integration
@@ -11,6 +9,7 @@ on:
       - ".github/workflows/ydm-kcgcore-x64.yml"
       - "gframe/**"
       - "travis/**"
+      - "ocgcore/**"
       - "premake5.lua"
 
 permissions:
@@ -57,34 +56,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "FFmpeg dependencies failed to install" }
           & "$root\vcpkg.exe" integrate install
 
-      - name: Stage FFmpeg headers, import libraries and runtime DLLs
-        shell: pwsh
-        run: |
-          $root = "$env:VCPKG_ROOT/installed/x64-windows"
-          New-Item -ItemType Directory -Force -Path "ffmpeg/include", "ffmpeg/lib", "ffmpeg/bin" | Out-Null
-          foreach ($name in @("libavcodec", "libavdevice", "libavfilter", "libavformat", "libavutil", "libswresample", "libswscale")) {
-            Copy-Item "$root/include/$name" "ffmpeg/include" -Recurse -Force
-          }
-          foreach ($name in @("avcodec.lib", "avdevice.lib", "avfilter.lib", "avformat.lib", "avutil.lib", "swresample.lib", "swscale.lib")) {
-            Copy-Item "$root/lib/$name" "ffmpeg/lib" -Force
-          }
-          Get-ChildItem "$root/bin/*.dll" | Copy-Item -Destination "ffmpeg/bin" -Force
-          if (-not (Test-Path "ffmpeg/include/libavcodec/avcodec.h")) { throw "FFmpeg headers missing" }
-          if (-not (Test-Path "ffmpeg/lib/avcodec.lib")) { throw "FFmpeg import library missing" }
-
-      - name: Stage SFML audio dependencies
-        shell: pwsh
-        run: |
-          $root = "$env:VCPKG_ROOT/installed/x64-windows-static"
-          New-Item -ItemType Directory -Force -Path "audio/include", "audio/lib" | Out-Null
-          foreach ($name in @("AL", "FLAC", "vorbis", "ogg")) {
-            Copy-Item "$root/include/$name" "audio/include" -Recurse -Force
-          }
-          foreach ($name in @("FLAC.lib", "vorbisfile.lib", "vorbis.lib", "ogg.lib", "OpenAL32.lib")) {
-            Copy-Item "$root/lib/$name" "audio/lib" -Force
-            if (-not (Test-Path "audio/lib/$name")) { throw "Missing audio library: $name" }
-          }
-
       - name: Fetch pinned KCGCore and its Lua submodule
         shell: pwsh
         run: |
@@ -111,7 +82,7 @@ jobs:
       - name: Generate current EDOPro x64 project
         shell: bash
         run: |
-          ./premake5 vs2022 --architecture=x64 --no-core=true --sound=miniaudio,sfml --no-joystick=true
+          ./premake5 vs2022 --architecture=x64 --sound=miniaudio,sfml --no-joystick=true
 
       - name: Build current EDOPro client x64
         shell: pwsh
@@ -126,11 +97,13 @@ jobs:
           New-Item -ItemType Directory -Force -Path deploy | Out-Null
           Copy-Item "bin/x64/release/ygoprodll.exe" deploy/ -Force
           Copy-Item "bin/x64/release/ocgcore.dll" deploy/ -Force
-          Get-ChildItem "ffmpeg/bin/*.dll" | Copy-Item -Destination deploy/ -Force
+          git clone --depth 1 https://github.com/ProjectIgnis/Distribution.git distribution
+          Copy-Item "distribution/*" deploy/ -Recurse -Force
           Copy-Item "NotoSansJP-Regular.otf" deploy/ -Force
           "KCGCore revision: 55ac550ec697bf3aea9cd71f1fbee633195cd556" | Set-Content deploy/BUILD-INFO.txt
           "EDOPro client source: $env:GITHUB_SHA" | Add-Content deploy/BUILD-INFO.txt
           if (-not (Test-Path "deploy/ocgcore.dll")) { throw "Core DLL missing from package" }
+          if (-not (Test-Path "deploy/resources")) { throw "Official runtime resources missing from package" }
 
       - name: Upload Windows x64 integration-test package
         uses: actions/upload-artifact@v4
