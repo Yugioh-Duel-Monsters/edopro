@@ -96,12 +96,14 @@ jobs:
         shell: pwsh
         run: |
           git clone --no-checkout https://github.com/Yugioh-Duel-Monsters/ocgcore-KCG.git ocgcore
-          git -C ocgcore fetch origin c7909008858e08d58a9f1bee6afc233274d1ac9
-          git -C ocgcore checkout --detach c7909008858e08d58a9f1bee6
-          if ($LASTEXITCODE -ne 0) { throw "Pinned KCGCore checkout failed" }
-          $actual = (git -C ocgcore rev-parse HEAD | Select-Object -First 1).ToString().Trim()
+          git -C ocgcore fetch origin ydm/official-first-kcg-core-rebuild
+          if ($LASTEXITCODE -ne 0) { throw "KCGCore branch fetch failed" }
+          git -C ocgcore checkout --detach FETCH_HEAD
+          if ($LASTEXITCODE -ne 0) { throw "KCGCore checkout failed" }
+          $expected = "c7909008858e08d58a9f1bee6eafc233274d1ac9"
+          $actual = (git -C ocgcore rev-parse HEAD).Trim()
           Write-Host "Using KCGCore commit: $actual"
-          if ($actual -ne "c7909008858e08d58a9f1bee6afc233274d1ac9") { throw "Unexpected KCGCore revision: $actual" }
+          if ($actual -ne $expected) { throw "Unexpected KCGCore revision: $actual (expected $expected)" }
           git -C ocgcore submodule update --init --recursive
           if ($LASTEXITCODE -ne 0) { throw "KCGCore Lua submodule checkout failed" }
 
