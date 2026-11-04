@@ -79,7 +79,9 @@ int SingleMode::SinglePlayThread(DuelOptions&& duelOptions) {
 		last_replay.Flush();
 		new_replay.Write<uint64_t>(opt);
 	};
-	mainGame->btnLeaveGame->setRelativePosition(mainGame->Resize(205, 5, 295, 45));
+	////kdiy////////
+	//mainGame->btnLeaveGame->setRelativePosition(mainGame->Resize(205, 5, 295, 45));
+	////kdiy////////
 	is_continuing = false;
 	is_restarting = false;
 	auto rnd = Utils::GetRandomNumberGenerator();
@@ -99,6 +101,18 @@ restart:
 	mainGame->dInfo.legacy_race_size = false;
 	mainGame->dInfo.startlp = mainGame->dInfo.lp[0] = mainGame->dInfo.lp[1] = duelOptions.startingLP;
 	mainGame->dInfo.strLP[0] = mainGame->dInfo.strLP[1] = epro::to_wstring(mainGame->dInfo.lp[0]);
+	///////////kdiy///////////
+	if(mainGame->dInfo.lp[0] >= 8888888) {
+        mainGame->dInfo.lp[0] = 8888888;
+		mainGame->dInfo.strLP[0] = L"\u221E";
+    } else
+		mainGame->dInfo.strLP[0] = epro::to_wstring(mainGame->dInfo.lp[0]);
+	if(mainGame->dInfo.lp[1] >= 8888888) {
+        mainGame->dInfo.lp[1] = 8888888;
+		mainGame->dInfo.strLP[1] = L"\u221E";
+    } else
+		mainGame->dInfo.strLP[1] = epro::to_wstring(mainGame->dInfo.lp[1]);
+	///////////kdiy///////////
 	mainGame->dInfo.selfnames = { mainGame->ebNickName->getText() };
 	mainGame->dInfo.opponames = { L"" };
 	mainGame->dInfo.player_type = 0;
@@ -126,8 +140,31 @@ restart:
 		if ((duelOptions.duelFlags & DUEL_PSEUDO_SHUFFLE) == 0)
 			std::shuffle(playerdeck.main.begin(), playerdeck.main.end(), rnd);
 		auto LoadDeck = [&](uint8_t team) {
-			OCG_NewCardInfo card_info = { team, 0, 0, team, 0, 0, POS_FACEDOWN_DEFENSE };
+            OCG_NewCardInfo card_info = { team, 0, 0, team, 0, 0, POS_FACEDOWN_DEFENSE };
 			card_info.loc = LOCATION_DECK;
+            ////////kdiy///////////
+            if(team == 1 && duelOptions.IshandTestOpponentDeck) {
+			Deck opponentdeck(mainGame->deckBuilder.GetOpponentDeck());
+            if ((duelOptions.duelFlags & DUEL_PSEUDO_SHUFFLE) == 0)
+			    std::shuffle(opponentdeck.main.begin(), opponentdeck.main.end(), rnd);
+            card_info.team = 1;
+            card_info.con = 1;
+            card_info.loc = LOCATION_DECK;
+			last_replay.Write<uint32_t>(static_cast<uint32_t>(opponentdeck.main.size()), false);
+			for (int32_t i = (int32_t)opponentdeck.main.size() - 1; i >= 0; --i) {
+				card_info.code = opponentdeck.main[i]->code;
+				pduel->DuelNewCard(&card_info);
+				last_replay.Write<uint32_t>(opponentdeck.main[i]->code, false);
+			}
+			card_info.loc = LOCATION_EXTRA;
+			last_replay.Write<uint32_t>(static_cast<uint32_t>(opponentdeck.extra.size()), false);
+			for (int32_t i = (int32_t)opponentdeck.extra.size() - 1; i >= 0; --i) {
+				card_info.code = opponentdeck.extra[i]->code;
+				pduel->DuelNewCard(&card_info);
+				last_replay.Write<uint32_t>(opponentdeck.extra[i]->code, false);
+			}
+            } else {
+            ////////kdiy///////////
 			last_replay.Write<uint32_t>(static_cast<uint32_t>(playerdeck.main.size()), false);
 			for (int32_t i = (int32_t)playerdeck.main.size() - 1; i >= 0; --i) {
 				card_info.code = playerdeck.main[i]->code;
@@ -141,6 +178,9 @@ restart:
 				pduel->DuelNewCard(&card_info);
 				last_replay.Write<uint32_t>(playerdeck.extra[i]->code, false);
 			}
+            ////////kdiy///////////
+            }
+            ////////kdiy///////////
 		};
 		LoadDeck(0);
 		if (duelOptions.handTestNoOpponent) {
@@ -182,7 +222,26 @@ restart:
 				mainGame->closeDuelWindow = true;
 				mainGame->closeDoneSignal.Wait(lock);
 			}
-			mainGame->btnLeaveGame->setRelativePosition(mainGame->Resize(205, 5, 295, 80));
+			////kdiy////////
+			//mainGame->btnLeaveGame->setRelativePosition(mainGame->Resize(205, 5, 295, 80));
+			mainGame->StopVideo(true);
+			if(mainGame->isEvent) {
+				mainGame->isEvent = false;
+				mainGame->cv->notify_one();
+				mainGame->chantsound.stop();
+				mainGame->chantmusic.stop();
+			}
+        	mainGame->bodycharacter[0] = 0;
+        	mainGame->bodycharacter[1] = 0;
+			for(int i = 0; i < 3; i++) {
+				mainGame->cutincharacter[0][i] = 0;
+				mainGame->cutincharacter[1][i] = 0;
+			}
+        	mainGame->lpcharacter[0] = 0;
+        	mainGame->lpcharacter[1] = 0;
+            gSoundManager->soundcount.clear();
+            mainGame->animecount.clear();
+			////kdiy////////
 			if(!hand_test) {
 				mainGame->ShowElement(mainGame->wSinglePlay);
 				mainGame->stTip->setVisible(false);
@@ -198,10 +257,17 @@ restart:
 				mainGame->wChat->setVisible(false);
 				mainGame->btnRestartSingle->setVisible(false);
 				mainGame->wPhase->setVisible(false);
+				////kdiy////////
+				mainGame->wBtnShowCard->setVisible(false);
+                mainGame->wLocation->setVisible(false);
+				////kdiy////////
 				mainGame->deckBuilder.Initialize(false);
 			}
-		} else
-			mainGame->btnLeaveGame->setRelativePosition(mainGame->Resize(205, 5, 295, 80));
+		////kdiy////////
+		//} else
+			//mainGame->btnLeaveGame->setRelativePosition(mainGame->Resize(205, 5, 295, 80));
+        }
+		////kdiy////////
 		is_restarting = false;
 		return 0;
 	}
@@ -213,9 +279,15 @@ restart:
 	is_restarting = false;
 	mainGame->mTopMenu->setVisible(false);
 	mainGame->wCardImg->setVisible(true);
-	mainGame->wInfos->setVisible(true);
+	/////kdiy/////
+    //mainGame->wInfos->setVisible(true);
+	/////kdiy/////
 	mainGame->btnLeaveGame->setVisible(true);
-	mainGame->btnLeaveGame->setText(gDataManager->GetSysString(1210).data());
+	////kdiy////
+	//mainGame->btnLeaveGame->setText(gDataManager->GetSysString(1210).data());
+	mainGame->btnLeaveGame->setToolTipText(gDataManager->GetSysString(1210).data());
+	mainGame->wBtnShowCard->setVisible(true);
+	////kdiy////
 	mainGame->btnRestartSingle->setVisible(true);
 	mainGame->wPhase->setVisible(true);
 	mainGame->dField.Clear();
@@ -258,7 +330,9 @@ restart:
 		open_file = false;
 		is_restarting = false;
 		mainGame->gMutex.lock();
-		mainGame->btnLeaveGame->setRelativePosition(mainGame->Resize(205, 5, 295, 80));
+		////kdiy////////
+		//mainGame->btnLeaveGame->setRelativePosition(mainGame->Resize(205, 5, 295, 80));
+		////kdiy////////
 		mainGame->gMutex.unlock();
 		return 0;
 	}
@@ -297,6 +371,11 @@ restart:
 			mainGame->wPosSelect->setVisible(false);
 			mainGame->wQuery->setVisible(false);
 			mainGame->stHintMsg->setVisible(false);
+            ////kdiy////////
+            for(int i = 0; i < 5; ++i)
+                mainGame->selectedcard[i]->setVisible(false);
+            mainGame->btnCancelOrFinish->setVisible(false);
+            ////kdiy////////
 			if(was_restarting)
 				goto restart;
 		}
@@ -309,7 +388,26 @@ restart:
 			mainGame->closeDuelWindow = true;
 			mainGame->closeDoneSignal.Wait(lock);
 		}
-		mainGame->btnLeaveGame->setRelativePosition(mainGame->Resize(205, 5, 295, 80));
+		////kdiy////////
+		//mainGame->btnLeaveGame->setRelativePosition(mainGame->Resize(205, 5, 295, 80));
+		mainGame->StopVideo(true);
+		if(mainGame->isEvent) {
+			mainGame->isEvent = false;
+			mainGame->cv->notify_one();
+			mainGame->chantsound.stop();
+			mainGame->chantmusic.stop();
+		}
+        mainGame->bodycharacter[0] = 0;
+        mainGame->bodycharacter[1] = 0;
+		for(int i = 0; i < 3; i++) {
+			mainGame->cutincharacter[0][i] = 0;
+			mainGame->cutincharacter[1][i] = 0;
+		}
+        mainGame->lpcharacter[0] = 0;
+        mainGame->lpcharacter[1] = 0;
+        gSoundManager->soundcount.clear();
+        mainGame->animecount.clear();
+		////kdiy////////
 		if(!hand_test) {
 			mainGame->ShowElement(mainGame->wSinglePlay);
 			mainGame->stTip->setVisible(false);
@@ -325,6 +423,10 @@ restart:
 			mainGame->wChat->setVisible(false);
 			mainGame->btnRestartSingle->setVisible(false);
 			mainGame->wPhase->setVisible(false);
+			////kdiy////////
+			mainGame->wBtnShowCard->setVisible(false);
+            mainGame->wLocation->setVisible(false);
+			////kdiy////////
 			mainGame->deckBuilder.Initialize(false);
 		}
 	}
@@ -375,6 +477,12 @@ bool SingleMode::SinglePlayAnalyze(CoreUtils::Packet& packet) {
 				break;
 			}
 			case 10:
+			////kdiy//////
+			case 21:
+			case 22:
+			case 23:
+			case 24:
+			////kdiy//////
 			case 200:
 			case 201:
 			case 202:
