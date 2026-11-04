@@ -51,6 +51,11 @@ newoption {
 	description = "Path to vcpkg installation"
 }
 newoption {
+	trigger = "ffmpeg-root",
+	value = "path",
+	description = "Path to staged FFmpeg headers and libraries"
+}
+newoption {
 	trigger = "vcpkg-triplet",
 	value = "triplet",
 	description = "Base vcpkg triplet to use, example: \"-mingw-static\""
@@ -69,6 +74,38 @@ newoption {
 	trigger = "no-core",
 	description = "Ignore the ocgcore subproject and only generate the solution for ygoprodll"
 }
+-----kdiy-----
+newoption {
+	trigger = "closeup",
+	value = "url_template",
+	description = "Default URL for Closeup"
+}
+newoption {
+	trigger = "zip",
+	description = "zip password"
+}
+newoption {
+    trigger = "update-pw",
+    description = "update password"
+}
+newoption {
+    trigger = "jhdpics",
+    value = "url_template",
+    description = "Default URL for jp hd card images"
+}
+newoption {
+    trigger = "vip",
+    description = "VIP functions support"
+}
+newoption {
+    trigger = "ek",
+    description = "EK"
+}
+newoption {
+    trigger = "server_url",
+    description = "Server IP"
+}
+-----kdiy-----
 newoption {
 	trigger = "architecture",
 	value = "arch",
