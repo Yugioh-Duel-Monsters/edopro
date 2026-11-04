@@ -2,6 +2,9 @@ project "sfAudio"
 	kind "StaticLib"
 	cppdialect "C++17"
 	externalincludedirs { "include", "external/headers" }
+	filter { "system:windows", "action:vs*" }
+		externalincludedirs "../audio/include"
+	filter {}
 	files { "src/**" }
 	filter {'action:not vs*'}
 		disablewarnings {"unused-variable"}
