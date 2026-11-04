@@ -141,7 +141,9 @@ public:
 #if IRRLICHT_VERSION_MAJOR==1 && IRRLICHT_VERSION_MINOR==9
 	IGUIScrollBar* getVerticalScrollBar() const override;
 #endif
-
+	/////kdiy/////
+	void LoadContents(std::vector<std::wstring>* names);
+	/////kdiy/////
 	void refreshList();
 
 	void resetPath();
