@@ -3129,6 +3129,13 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
 		CoreUtils::loc_info current = CoreUtils::ReadLocInfo(pbuf, mainGame->dInfo.compat_mode);
 		current.controler = mainGame->LocalPlayer(current.controler);
 		const auto reason = BufferIO::Read<uint32_t>(pbuf);
+		// KCGCore extends MSG_MOVE with the reason player and zone-role flags.
+		const auto reason_player = mainGame->LocalPlayer(BufferIO::Read<uint8_t>(pbuf));
+		const auto pzone = BufferIO::Read<bool>(pbuf);
+		const auto firstone = BufferIO::Read<bool>(pbuf);
+		const auto sanct = BufferIO::Read<bool>(pbuf);
+		(void)reason_player;
+		(void)firstone;
 		if (previous.location != current.location) {
 			if (reason & REASON_DESTROY)
 				Play(SoundManager::SFX::DESTROYED);
@@ -3139,6 +3146,9 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
 		if (previous.location == 0) {
 			ClientCard* pcard = new ClientCard{};
 			pcard->position = current.position;
+			pcard->is_pzone = pzone;
+			pcard->is_sanct = sanct;
+			pcard->is_orica = false;
 			pcard->SetCode(code);
 			mainGame->dField.AddCard(pcard, current.controler, current.location, current.sequence);
 			if(!mainGame->dInfo.isCatchingUp) {
