@@ -3211,6 +3211,9 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
 				pcard->is_showchaintarget = false;
 				mainGame->dField.RemoveCard(previous.controler, previous.location, previous.sequence);
 				pcard->position = current.position;
+				pcard->is_pzone = pzone;
+				pcard->is_sanct = sanct;
+				pcard->is_orica = current.location == LOCATION_SZONE && !sanct;
 				mainGame->dField.AddCard(pcard, current.controler, current.location, current.sequence);
 				if(!mainGame->dInfo.isCatchingUp) {
 					if (previous.location == current.location && previous.controler == current.controler && (current.location & (LOCATION_DECK | LOCATION_GRAVE | LOCATION_REMOVED | LOCATION_EXTRA))) {
@@ -3271,6 +3274,9 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
 				olcard->overlayed.erase(olcard->overlayed.begin() + pcard->sequence);
 				pcard->overlayTarget = 0;
 				pcard->position = current.position;
+				pcard->is_pzone = pzone;
+				pcard->is_sanct = sanct;
+				pcard->is_orica = current.location == LOCATION_SZONE && !sanct;
 				mainGame->dField.AddCard(pcard, current.controler, current.location, current.sequence);
 				mainGame->dField.overlay_cards.erase(pcard);
 				for(size_t i = 0; i < olcard->overlayed.size(); ++i) {
