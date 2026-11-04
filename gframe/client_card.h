@@ -16,6 +16,11 @@ public:
 	irr::core::matrix4 mTransform;
 	irr::core::vector3df curPos;
 	irr::core::vector3df curRot;
+    /////////kdiy/////////
+	irr::core::vector3df attPos;
+	irr::core::vector3df attdPos;
+	irr::core::vector3df attRot;
+    /////////kdiy/////////
 	irr::core::vector3df dPos;
 	irr::core::vector3df dRot;
 	irr::core::recti hand_collision;
@@ -38,9 +43,46 @@ public:
 	uint32_t chain_code;
 	uint32_t alias;
 	uint32_t type;
-	uint32_t level;
-	uint32_t rank;
-	uint32_t link;
+	/////////kdiy/////////
+	bool is_activable;
+	//uint32_t level;
+	int32_t level;
+	int32_t rank;
+	//uint32_t rank;
+	//uint32_t link;
+	int32_t link;
+	uint32_t piccode = 0;
+	bool is_change = false;
+	uint64_t rsetnames;
+	uint32_t rtype;
+	int32_t rlevel;
+	uint32_t rattribute;
+	uint64_t rrace;
+	int32_t rattack;
+	int32_t rdefense;
+	uint32_t rlscale;
+	uint32_t rrscale;
+	uint32_t rlink_marker;
+	bool is_real = false;
+	bool is_rreal = false;
+	uint32_t effcode = 0;
+	uint32_t namecode = 0;
+	std::wstring realcardname = L"";
+	std::wstring orealcardname = L"";
+	bool is_orica = false;
+	bool is_sanct = false;
+	bool is_pzone = false;
+	bool is_flip = false;
+	uint16_t summon_extra = 0;
+	bool is_equip = false;
+	bool is_attack = false;
+	bool is_attacking = false;
+	bool is_attacked = false;
+	bool is_battling = false;
+	bool is_attack_disabled = false;
+	bool is_damage = false;
+	bool is_anime = false;
+    /////////kdiy/////////
 	uint32_t attribute;
 	uint64_t race;
 	int32_t attack;
@@ -72,6 +114,10 @@ public:
 	std::set<ClientCard*> ownerTarget;
 	std::map<int, int> counters;
 	std::map<irr::u64, int> desc_hints;
+    //kdiy////////
+	std::vector<std::wstring> text_hints;
+	std::map<irr::u64, int> text_hints_no;
+    //kdiy////////
 	std::wstring atkstring;
 	std::wstring defstring;
 	std::wstring lvstring;
