@@ -32,6 +32,7 @@ ImageDownloader::~ImageDownloader() {
 }
 void ImageDownloader::AddDownloadResource(PicSource src) {
 	pic_urls.push_back(src);
+
 }
 
 static constexpr std::array<uint8_t, 8> pngheader{ 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
@@ -82,6 +83,11 @@ void ImageDownloader::DownloadPic() {
 		ErrorLog("Failed to start downloader thread");
 		return;
 	}
+    ////kdiy////////
+    // Disabling SSL certificate verification
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+    ////kdiy////////
 	curl_payload payload;
 	char curl_error_buffer[CURL_ERROR_SIZE];
 	curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_error_buffer);
@@ -137,12 +143,26 @@ void ImageDownloader::DownloadPic() {
 				name.append(EPRO_TEXT("_c"));
 				break;
 			}
+			//kdiy//////
+			case imgType::CLOSEUP: {
+				dest = EPRO_TEXT("./pics/closeup/{}"sv);
+				name.append(EPRO_TEXT("_u"));
+				break;
+			}
+			//kdiy//////
 		}
 		auto dest_folder = epro::format(dest, code);
 		CURLcode res{ static_cast<CURLcode>(1) };
 		for(auto& src : pic_urls) {
 			if(src.type != type)
 				continue;
+            ////kdiy////////
+            auto dest_folder2 = dest_folder;
+            if(gGameConfig->hdpic == 0 && src.hd == 1)
+				continue;
+            if(gGameConfig->hdpic == 1 && src.hd == 1)
+                dest_folder = epro::format(EPRO_TEXT("./hdpics/jp/{}"), code);
+            ////kdiy////////
 			auto fp = fileopen(name.data(), "wb");
 			if(fp == nullptr) {
 				if(gGameConfig->logDownloadErrors) {
@@ -157,7 +177,7 @@ void ImageDownloader::DownloadPic() {
 			if(res == CURLE_OK) {
 				const auto ext = GetExtension(payload.header);
 				dest_folder.append(ext.data(), ext.size());
-				if(!Utils::FileMove(name, dest_folder))
+                if(!Utils::FileMove(name, dest_folder))
 					Utils::FileDelete(name);
 				break;
 			}
@@ -166,13 +186,16 @@ void ImageDownloader::DownloadPic() {
 				ygo::ErrorLog("Curl error: ({}) {} ({})", res, curl_easy_strerror(res), curl_error_buffer);
 			}
 			Utils::FileDelete(name);
+            ////kdiy////////
+            dest_folder = dest_folder2;
+            ////kdiy////////
 		}
 		lck.lock();
 		if(res == CURLE_OK) {
 			map_elem.status = downloadStatus::DOWNLOADED;
 			map_elem.path = std::move(dest_folder);
 		} else
-			map_elem.status = downloadStatus::DOWNLOAD_ERROR;
+			map_elem.status = downloadStatus::DOWNLOAD_ERROR;		
 	}
 }
 void ImageDownloader::AddToDownloadQueue(uint32_t code, imgType type) {
@@ -187,6 +210,7 @@ void ImageDownloader::AddToDownloadQueue(uint32_t code, imgType type) {
 		to_download.emplace_back(downloadParam{ code, type });
 		cv.notify_one();
 	}
+	
 }
 ImageDownloader::downloadStatus ImageDownloader::GetDownloadStatus(uint32_t code, imgType type) {
 	if(type == imgType::THUMB)
