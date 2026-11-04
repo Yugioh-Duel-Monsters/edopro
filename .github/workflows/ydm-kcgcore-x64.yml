@@ -118,7 +118,7 @@ jobs:
       - name: Generate current EDOPro x64 project
         shell: bash
         run: |
-          ./premake5 vs2022 --architecture=x64 --sound=miniaudio,sfml --no-joystick=true
+          ./premake5 vs2022 --architecture=x64 --sound=miniaudio,sfml --no-joystick=true --server_url=127.0.0.1
 
       - name: Build current EDOPro client x64
         shell: pwsh
