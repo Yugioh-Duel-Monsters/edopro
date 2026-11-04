@@ -3107,6 +3107,9 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
 			card->rrscale = rscale;
 			card->rlink_marker = link_marker;
 			card->piccode = 0;
+			card->is_real = realcode > 0;
+			card->effcode = effcode;
+			card->namecode = namecode;
 			card->type = type;
 			card->level = level;
 			card->attribute = attribute;
