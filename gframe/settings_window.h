@@ -14,6 +14,9 @@ class IGUIEditBox;
 class IGUIEnvironment;
 class IGUITab;
 class Panel;
+/////kdiy/////
+class CGUIImageButton;
+/////kdiy/////
 }
 }
 
@@ -33,6 +36,9 @@ struct SettingsPane {
 	irr::gui::IGUIStaticText* stSoundVolume;
 	irr::gui::IGUIScrollBar* scrSoundVolume;
 	irr::gui::IGUICheckBox* chkEnableMusic;
+	///////kdiy////////
+	irr::gui::IGUICheckBox* chkEnableAnime;
+	///////kdiy////////	
 	irr::gui::IGUIStaticText* stMusicVolume;
 	irr::gui::IGUIScrollBar* scrMusicVolume;
 	irr::gui::IGUIStaticText* stNoAudioBackend;
@@ -93,6 +99,47 @@ struct SettingsWindow {
 	irr::gui::IGUIStaticText* stSoundVolume;
 	irr::gui::IGUIScrollBar* scrSoundVolume;
 	irr::gui::IGUICheckBox* chkEnableMusic;
+	///////kdiy////////
+	irr::gui::IGUIStaticText* stCurrentFont;
+	irr::gui::IGUIComboBox* cbCurrentFont;
+	irr::gui::IGUIEditBox* ebFontSize;
+    irr::gui::IGUIStaticText* stSound;
+	irr::gui::IGUICheckBox* chkEnableAnime;
+	irr::gui::IGUICheckBox* chkEnableSummonSound;
+	irr::gui::IGUICheckBox* chkEnableActivateSound;
+	irr::gui::IGUICheckBox* chkEnableAttackSound;
+	irr::gui::IGUICheckBox* chkEnableSummonAnime;
+	irr::gui::IGUICheckBox* chkEnableActivateAnime;
+	irr::gui::IGUICheckBox* chkEnableAttackAnime;
+	irr::gui::IGUICheckBox* chkEnableAnimeSound;
+	irr::gui::IGUICheckBox* chkEnableFieldAnime;
+	irr::gui::IGUICheckBox* chkEnableCloseupAnime;
+	irr::gui::IGUICheckBox* chkAnimeFull;
+    irr::gui::IGUICheckBox* chkPauseduel;
+    irr::gui::IGUIWindow* wRandomTexture;
+	irr::gui::IGUICheckBox* chkRandomtexture;
+    irr::gui::IGUIWindow* wRandomWallpaper;
+	irr::gui::IGUICheckBox* chkRandomwallpaper;
+	irr::gui::IGUICheckBox* chkVideowallpaper;
+	irr::gui::IGUIComboBox* cbVideowallpaper;
+	irr::gui::IGUICheckBox* chkRandomVideowallpaper;
+	irr::gui::IGUICheckBox* chktexture[20];
+	irr::gui::IGUIComboBox* cbName_texture[20];
+	irr::gui::CGUIImageButton* btnrandomtexture;
+	bool clickedchkbox = false;
+	int clickedindex = -1;
+	irr::gui::CGUIImageButton* btnrandomtextureSelect1;
+	irr::gui::CGUIImageButton* btnrandomtextureSelect2;
+    irr::gui::IGUIButton* btnrandomtexture_close;
+	irr::gui::CGUIImageButton* btnrandomtexture2;
+	irr::gui::CGUIImageButton* btnrandomtextureSelect12;
+	irr::gui::CGUIImageButton* btnrandomtextureSelect22;
+    irr::gui::IGUIButton* btnrandomtexture_close2;
+	irr::gui::IGUICheckBox* chkCloseup;
+	irr::gui::IGUICheckBox* chkPainting;
+	irr::gui::IGUICheckBox* chktField;
+	irr::gui::IGUICheckBox* chkHideNameTag;
+	///////kdiy////////
 	irr::gui::IGUIStaticText* stMusicVolume;
 	irr::gui::IGUIScrollBar* scrMusicVolume;
 	irr::gui::IGUICheckBox* chkLoopMusic;
