@@ -6,7 +6,6 @@
 #include "netserver.h"
 #include "generic_duel.h"
 #include "common.h"
-
 namespace ygo {
 bool operator==(const ClientVersion& ver1, const ClientVersion& ver2) {
 	return ver1.client.major == ver2.client.major && ver1.client.minor == ver2.client.minor && ver1.core.major == ver2.core.major && ver1.core.minor == ver2.core.minor;
@@ -418,6 +417,20 @@ void NetServer::HandleCTOSPacket(DuelPlayer* dp, uint8_t* data, uint32_t len) {
 		duel_mode->PlayerReady(dp, (CTOS_HS_NOTREADY - pktType) != 0);
 		break;
 	}
+	/////kdiy//////////
+	case CTOS_AI_READY: {
+		if(!duel_mode || duel_mode->pduel)
+			break;
+		duel_mode->PlayerReady(dp, (CTOS_HS_NOTREADY - pktType) != 0, true);
+		break;
+	}
+	case CTOS_MODE_HS_START: {
+		if(!duel_mode || duel_mode->pduel)
+			break;
+		duel_mode->ModeStartDuel(dp);
+		break;
+	}
+	/////kdiy//////////	
 	case CTOS_HS_KICK: {
 		if(!duel_mode || duel_mode->pduel)
 			break;
