@@ -52,8 +52,6 @@ jobs:
           & "$root\bootstrap-vcpkg.bat" -disableMetrics
           & "$root\vcpkg.exe" install fmt curl freetype sqlite3 libevent libgit2 libssh2 openssl libpng bzip2 zlib libjpeg-turbo nlohmann-json openal-soft libflac libvorbis --triplet x64-windows-static
           if ($LASTEXITCODE -ne 0) { throw "Static client dependencies failed to install" }
-          & "$root\vcpkg.exe" install ffmpeg --triplet x64-windows
-          if ($LASTEXITCODE -ne 0) { throw "FFmpeg dependencies failed to install" }
           & "$root\vcpkg.exe" integrate install
 
       - name: Fetch pinned KCGCore and its Lua submodule
@@ -97,13 +95,15 @@ jobs:
           New-Item -ItemType Directory -Force -Path deploy | Out-Null
           Copy-Item "bin/x64/release/ygoprodll.exe" deploy/ -Force
           Copy-Item "bin/x64/release/ocgcore.dll" deploy/ -Force
-          git clone --depth 1 https://github.com/ProjectIgnis/Distribution.git distribution
+          git clone --depth 1 --recurse-submodules --shallow-submodules https://github.com/ProjectIgnis/Distribution.git distribution
           Copy-Item "distribution/*" deploy/ -Recurse -Force
           Copy-Item "NotoSansJP-Regular.otf" deploy/ -Force
           "KCGCore revision: 55ac550ec697bf3aea9cd71f1fbee633195cd556" | Set-Content deploy/BUILD-INFO.txt
           "EDOPro client source: $env:GITHUB_SHA" | Add-Content deploy/BUILD-INFO.txt
           if (-not (Test-Path "deploy/ocgcore.dll")) { throw "Core DLL missing from package" }
-          if (-not (Test-Path "deploy/resources")) { throw "Official runtime resources missing from package" }
+          if (-not (Test-Path "deploy/script")) { throw "Official card scripts missing from package" }
+          if (-not (Test-Path "deploy/textures")) { throw "Official UI textures missing from package" }
+          if (-not (Test-Path "deploy/config")) { throw "Default configuration missing from package" }
 
       - name: Upload Windows x64 integration-test package
         uses: actions/upload-artifact@v4
