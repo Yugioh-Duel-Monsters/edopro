@@ -309,6 +309,9 @@ void Replay::Reset() {
 	responses.clear();
 	responses.shrink_to_fit();
 	players.clear();
+    ///kdiy/////
+	playersC.clear();
+    ///kdiy/////
 	decks.clear();
 	decks.shrink_to_fit();
 	params = { 0 };
