@@ -7,6 +7,9 @@
 #include "common.h"
 #include "text_types.h"
 #include "utils.h"
+/////kdiy/////
+#include "client_card.h"
+/////kdiy/////
 
 struct sqlite3;
 struct sqlite3_stmt;
@@ -29,6 +32,9 @@ class IReadFile;
 #define SCOPE_RUSH       0x200
 #define SCOPE_LEGEND     0x400
 #define SCOPE_HIDDEN     0x1000
+/////zdiy/////
+#define SCOPE_ZCG        0x2000
+/////zdiy/////
 
 #define SCOPE_OCG_TCG    (SCOPE_OCG | SCOPE_TCG)
 #define SCOPE_OFFICIAL   (SCOPE_OCG | SCOPE_TCG | SCOPE_PRERELEASE)
@@ -44,8 +50,11 @@ struct CardData {
 	uint32_t code;
 	uint32_t alias;
 	uint16_t* setcodes;
-	uint32_t type;
-	uint32_t level;
+    uint32_t type;
+	//////kdiy///////
+	//uint32_t level;
+	int32_t level;
+	//////kdiy///////
 	uint32_t attribute;
 	uint64_t race;
 	int32_t attack;
@@ -53,13 +62,19 @@ struct CardData {
 	uint32_t lscale;
 	uint32_t rscale;
 	uint32_t link_marker;
+	//////kdiy///////
+	uint32_t ot;
+	//////kdiy///////
 };
 struct CardDataC {
 	uint32_t code;
 	uint32_t alias;
 	uint16_t* setcodes_p;
-	uint32_t type;
-	uint32_t level;
+    uint32_t type;
+	//////kdiy///////
+	//uint32_t level;
+	int32_t level;
+	//////kdiy///////
 	uint32_t attribute;
 	uint64_t race;
 	int32_t attack;
@@ -149,7 +164,13 @@ public:
 	void ClearLocaleStrings();
 	const CardDataC* GetCardData(uint32_t code) const;
 	const CardDataC* GetMappedCardData(uint32_t code) const;
-	epro::wstringview GetName(uint32_t code) const;
+	/////kdiy/////
+	//epro::wstringview GetName(uint32_t code) const;
+	std::wstring GetOriginalName(uint32_t code, bool hidenametag=false) const;
+	std::wstring GetName(uint32_t code, bool hidenametag=false) const;
+	std::wstring GetName(ClientCard* pcard, bool hidenametag=false) const;
+	std::wstring GetName(ClientCard* pcard, uint32_t code, bool hidenametag=false) const;
+	/////kdiy/////
 	epro::wstringview GetText(uint32_t code) const;
 	epro::wstringview GetUppercaseName(uint32_t code) const;
 	epro::wstringview GetUppercaseText(uint32_t code) const;
@@ -184,7 +205,6 @@ public:
 	std::wstring FormatScope(uint32_t scope, bool hideOCGTCG = false) const;
 	std::wstring FormatSetName(const std::vector<uint16_t>& setcodes) const;
 	std::wstring FormatLinkMarker(uint32_t link_marker) const;
-
 	std::unordered_map<uint32_t, CardDataM> cards;
 
 	static constexpr auto unknown_string = L"???"sv;
