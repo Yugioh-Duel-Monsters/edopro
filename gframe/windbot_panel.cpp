@@ -42,11 +42,13 @@ void WindBotPanel::Refresh(int filterMasterRule, int lastIndex) {
 	if(genericEngine) {
 		genericEngineIdx = cbBotEngine->addItem(genericEngine->name.data(), i);
 	}
-	for(auto& file : Utils::FindFiles(DeckManager::GetDeckFolder(), { EPRO_TEXT("ydk") })) {
-		file.erase(file.size() - 4);
-		cbBotDeck->addItem(Utils::ToUnicodeIfNeeded(file).data(), i);
-		i++;
-	}
+	////kdiy//////
+	// for(auto& file : Utils::FindFiles(DeckManager::GetDeckFolder(), { EPRO_TEXT("ydk") })) {
+	// 	file.erase(file.size() - 4);
+	// 	cbBotDeck->addItem(Utils::ToUnicodeIfNeeded(file).data(), i);
+	// 	i++;
+	// }
+	////kdiy//////
 	UpdateDescription();
 }
 
@@ -98,17 +100,32 @@ bool WindBotPanel::LaunchSelected(int port, epro::wstringview pass) {
 	if (index < 0 || engine < 0) return false;
 	const wchar_t* overridedeck = nullptr;
 	std::wstring tmpdeck{};
-	const auto maxsize = (int)(bots.size() - (genericEngine != nullptr));
-	if(engine != index || index >= maxsize) {
-		if(index >= maxsize) {
-			tmpdeck = Utils::ToUnicodeIfNeeded(DeckManager::GetDeckPath(Utils::ToPathString(cbBotDeck->getItem(cbBotDeck->getSelected()))));
-			overridedeck = tmpdeck.data();
-		} else {
-			overridedeck = bots[index].deckfile.data();
+	/////kdiy//////
+	// const auto maxsize = (int)(bots.size() - (genericEngine != nullptr));
+	// if(engine != index || index >= maxsize) {
+	// 	if(index >= maxsize) {
+	// 		tmpdeck = Utils::ToUnicodeIfNeeded(DeckManager::GetDeckPath(Utils::ToPathString(cbBotDeck->getItem(cbBotDeck->getSelected()))));
+	// 		overridedeck = tmpdeck.data();
+	// 	} else {
+	// 		overridedeck = bots[index].deckfile.data();
+	// 	}
+	// }
+	if(bots[index].deck == L"AI_perfectdicky") {
+		if (aiDeckSelect2->getSelected() == 0)
+			tmpdeck = Utils::ToUnicodeIfNeeded(DeckManager::GetDeckPath(Utils::ToPathString(aiDeckSelect->getItem(aiDeckSelect->getSelected()))));
+		else {
+			auto s = epro::format(EPRO_TEXT("{}/{}"), Utils::ToPathString(aiDeckSelect2->getItem(aiDeckSelect2->getSelected())), Utils::ToPathString(aiDeckSelect->getItem(aiDeckSelect->getSelected())));
+			tmpdeck = Utils::ToUnicodeIfNeeded(DeckManager::GetDeckPath(s));
 		}
+		overridedeck = tmpdeck.data();
+		bots[index].deckpath = aiDeckSelect->getItem(aiDeckSelect->getSelected());
 	}
+	/////kdiy//////
 	// 1 = scissors, 2 = rock, 3 = paper
-	auto res = bots[engine].Launch(port, pass, !chkMute->isChecked(), chkThrowRock->isChecked() * 2, overridedeck);
+	/////kdiy//////
+	//auto res = bots[engine].Launch(port, pass, !chkMute->isChecked(), chkThrowRock->isChecked() * 2, overridedeck);
+	auto res = bots[engine].Launch(port, pass, !chkMute->isChecked(), chkThrowRock->isChecked() * 2, overridedeck, chkSeed->getSelected());
+	/////kdiy//////
 #if EDOPRO_LINUX || EDOPRO_MACOS
 	if(res > 0)
 		windbotsPids.push_back(res);
@@ -132,7 +149,10 @@ std::wstring WindBotPanel::GetParameters(int port, epro::wstringview pass) {
 		}
 	}
 	// 1 = scissors, 2 = rock, 3 = paper
-	return bots[engine].GetLaunchParameters(port, pass, !chkMute->isChecked(), chkThrowRock->isChecked() * 2, overridedeck);
+    ////kdiy/////////
+	//return bots[engine].GetLaunchParameters(port, pass, !chkMute->isChecked(), chkThrowRock->isChecked() * 2, overridedeck);
+    return bots[engine].GetLaunchParameters(port, pass, !chkMute->isChecked(), chkThrowRock->isChecked() * 2, overridedeck, chkSeed->getSelected());
+    ////kdiy/////////
 }
 
 }
