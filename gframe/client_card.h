@@ -37,6 +37,9 @@ public:
 	uint32_t code;
 	// KCGCore runtime card identity overrides.
 	bool is_change = false;
+	bool is_orica = false;
+	bool is_sanct = false;
+	bool is_pzone = false;
 	uint32_t piccode = 0;
 	uint64_t rsetnames = 0;
 	uint32_t rtype = 0;
