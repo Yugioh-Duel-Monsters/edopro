@@ -36,7 +36,7 @@ namespace ygo {
 		mainGame->dInfo.team1 = ReplayMode::cur_yrp->GetPlayersCount(0);
 		mainGame->dInfo.team2 = ReplayMode::cur_yrp->GetPlayersCount(1);
 		if(!mainGame->dInfo.isRelay)
-			mainGame->dInfo.current_player[1] = mainGame->dInfo.team2 - 1;
+			mainGame->dInfo.current_player[1] = mainGame->dInfo.team2 - 1;		
 		if (!StartDuel()) {
 			EndDuel();
 			return 0;
@@ -108,10 +108,21 @@ namespace ygo {
 	bool ReplayMode::StartDuel() {
 		const auto& replay_header = cur_yrp->pheader;
 		const auto& seed = replay_header.seed;
-		const auto& names = cur_yrp->GetPlayerNames();
+        const auto& names = cur_yrp->GetPlayerNames();
 		const auto first_oppo_player = names.begin() + cur_yrp->GetPlayersCount(0);
-		mainGame->dInfo.selfnames.assign(names.begin(), first_oppo_player);
-		mainGame->dInfo.opponames.assign(first_oppo_player, names.end());
+        /////kdiy///////
+		//mainGame->dInfo.selfnames.assign(names.begin(), first_oppo_player);
+		//mainGame->dInfo.opponames.assign(first_oppo_player, names.end());
+		auto& names2 = cur_yrp->playersC;
+        if(names2.empty() || names2.size() < 2) {
+            mainGame->dInfo.selfnames.assign(names.begin(), first_oppo_player);
+            mainGame->dInfo.opponames.assign(first_oppo_player, names.end());
+        } else {
+            auto oppo_player1 = names2.begin() + cur_yrp->GetPlayersCount(0);
+            mainGame->dInfo.selfnames.assign(names2.begin(), oppo_player1);
+            mainGame->dInfo.opponames.assign(oppo_player1, names2.end());
+        }
+        /////kdiy///////
 		uint32_t start_lp = cur_yrp->params.start_lp;
 		uint32_t start_hand = cur_yrp->params.start_hand;
 		uint32_t draw_count = cur_yrp->params.draw_count;
@@ -125,8 +136,18 @@ namespace ygo {
 		mainGame->dInfo.lp[0] = start_lp;
 		mainGame->dInfo.lp[1] = start_lp;
 		mainGame->dInfo.startlp = start_lp;
-		mainGame->dInfo.strLP[0] = epro::to_wstring(start_lp);
-		mainGame->dInfo.strLP[1] = mainGame->dInfo.strLP[0];
+		///////////kdiy///////////
+		//mainGame->dInfo.strLP[0] = epro::to_wstring(start_lp);
+		//mainGame->dInfo.strLP[1] = mainGame->dInfo.strLP[0];
+		if(start_lp >= 8888888)
+			mainGame->dInfo.strLP[0] = L"\u221E";
+		else
+		    mainGame->dInfo.strLP[0] = epro::to_wstring(start_lp);
+		if(start_lp >= 8888888)
+			mainGame->dInfo.strLP[1] = L"\u221E";
+		else
+			mainGame->dInfo.strLP[1] = mainGame->dInfo.strLP[0];
+		///////////kdiy///////////
 		mainGame->dInfo.turn = 0;
 		if (!mainGame->dInfo.isSingleMode || (replay_header.base.flag & REPLAY_HAND_TEST)) {
 			const auto& rule_cards = cur_yrp->GetRuleCards();
