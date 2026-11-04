@@ -35,6 +35,19 @@ public:
 	bool is_reversed;
 	bool is_public;
 	uint32_t code;
+	// KCGCore runtime card identity overrides.
+	bool is_change = false;
+	uint32_t piccode = 0;
+	uint64_t rsetnames = 0;
+	uint32_t rtype = 0;
+	int32_t rlevel = 0;
+	uint32_t rattribute = 0;
+	uint64_t rrace = 0;
+	int32_t rattack = 0;
+	int32_t rdefense = 0;
+	uint32_t rlscale = 0;
+	uint32_t rrscale = 0;
+	uint32_t rlink_marker = 0;
 	uint32_t chain_code;
 	uint32_t alias;
 	uint32_t type;
