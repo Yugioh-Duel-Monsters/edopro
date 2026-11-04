@@ -27,11 +27,18 @@
 #include <IGUIWindow.h>
 #include "address.h"
 #include "fmt.h"
+//////kdiy///////
+#include "CGUIImageButton/CGUIImageButton.h"
+#include "sound_manager.h"
+//////kdiy///////
 #include "localtime.h"
 
 namespace ygo {
 
 static void UpdateDeck() {
+	/////kdiy/////
+	gGameConfig->lastdeckfolder = mainGame->cbDeck2Select->getItem(mainGame->cbDeck2Select->getSelected());
+	/////kdiy/////
 	gGameConfig->lastdeck = mainGame->cbDeckSelect->getItem(mainGame->cbDeckSelect->getSelected());
 	const auto& deck = mainGame->deckBuilder.GetCurrentDeck();
 	uint8_t deckbuf[0xf000];
@@ -43,10 +50,19 @@ static void UpdateDeck() {
 	BufferIO::Write<uint32_t>(pdeck, static_cast<uint32_t>(deck.main.size() + deck.extra.size()));
 	BufferIO::Write<uint32_t>(pdeck, static_cast<uint32_t>(deck.side.size()));
 	for(const auto& pcard : deck.main)
+        ///////kdiy/////////
+        if(!(pcard->code == 111 || pcard->code == 112 || pcard->code == 211 || pcard->code == 208 || pcard->code == 85 || pcard->code == 86 || pcard->code == 157 || pcard->code == 842 || pcard->code == 843))
+        ///////kdiy/////////
 		BufferIO::Write<uint32_t>(pdeck, pcard->code);
 	for(const auto& pcard : deck.extra)
+        ///////kdiy/////////
+        if(!(pcard->code == 111 || pcard->code == 112 || pcard->code == 211 || pcard->code == 208 || pcard->code == 85 || pcard->code == 86 || pcard->code == 157 || pcard->code == 842 || pcard->code == 843))
+        ///////kdiy/////////
 		BufferIO::Write<uint32_t>(pdeck, pcard->code);
 	for(const auto& pcard : deck.side)
+        ///////kdiy/////////
+        if(!(pcard->code == 111 || pcard->code == 112 || pcard->code == 211 || pcard->code == 208 || pcard->code == 85 || pcard->code == 86 || pcard->code == 157 || pcard->code == 842 || pcard->code == 843))
+        ///////kdiy/////////
 		BufferIO::Write<uint32_t>(pdeck, pcard->code);
 	DuelClient::SendBufferToServer(CTOS_UPDATE_DECK, deckbuf, pdeck - deckbuf);
 	gdeckManager->sent_deck = mainGame->deckBuilder.GetCurrentDeck();
@@ -72,7 +88,11 @@ static void LoadReplay() {
 	mainGame->ClearCardInfo();
 	mainGame->mTopMenu->setVisible(false);
 	mainGame->wCardImg->setVisible(true);
-	mainGame->wInfos->setVisible(true);
+	/////kdiy/////
+    //mainGame->wInfos->setVisible(true);
+	mainGame->btnLeaveGame->setVisible(true);
+	mainGame->wBtnShowCard->setVisible(true);
+	/////kdiy/////
 	mainGame->wReplay->setVisible(true);
 	mainGame->wReplayControl->setVisible(true);
 	mainGame->btnReplayStart->setVisible(false);
@@ -136,6 +156,16 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 		}
 		case irr::gui::EGET_BUTTON_CLICKED: {
 			switch(id) {
+			////////kdiy///////
+			case BUTTON_QQ: {
+				Utils::SystemOpen(EPRO_TEXT("https://jq.qq.com/?_wv=1027&k=S1vfY66P"), Utils::OPEN_URL);
+				break;
+			}
+			case BUTTON_QQ2: {
+				Utils::SystemOpen(EPRO_TEXT("https://qm.qq.com/cgi-bin/qm/qr?k=0BcdVu6E2gUjyc_WmL25uLNYib2mTPoV"), Utils::OPEN_URL);
+				break;
+			}
+			////////kdiy///////
 			case BUTTON_MODE_EXIT: {
 				mainGame->device->closeDevice();
 				break;
@@ -143,6 +173,11 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 			case BUTTON_ONLINE_MULTIPLAYER: {
 				mainGame->isHostingOnline = true;
 				mainGame->HideElement(mainGame->wMainMenu);
+				////kdiy////////
+				#ifdef EK
+				mainGame->HideElement(mainGame->wQQ);
+				#endif
+				////kdiy////////
 				mainGame->ShowElement(mainGame->wRoomListPlaceholder);
 				break;
 			}
@@ -153,17 +188,36 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 			case BUTTON_JOIN_HOST2: {
 				if(wcslen(mainGame->ebNickNameOnline->getText()) <= 0) {
 					mainGame->PopupMessage(gDataManager->GetSysString(1257), gDataManager->GetSysString(1256));
+					///////kdiy/////////////
+					for(size_t i = 0; i < mainGame->cbDeck2Select->getItemCount(); ++i) {
+						if(gGameConfig->lastdeckfolder == mainGame->cbDeck2Select->getItem(i)) {
+							mainGame->cbDeck2Select->setSelected(i);
+						}
+					}
+					///////kdiy/////////////
 					break;
 				}
 				if(mainGame->roomListTable->getSelected() >= 0) {
 					mainGame->HideElement(mainGame->wRoomListPlaceholder);
 					ServerLobby::JoinServer(false);
+					///////kdiy/////////////
+					for(size_t i = 0; i < mainGame->cbDeck2Select->getItemCount(); ++i) {
+						if(gGameConfig->lastdeckfolder == mainGame->cbDeck2Select->getItem(i)) {
+							mainGame->cbDeck2Select->setSelected(i);
+						}
+					}
+					///////kdiy/////////////
 				}
 				break;
 			}
 			case BUTTON_JOIN_CANCEL2: {
 				mainGame->HideElement(mainGame->wRoomListPlaceholder);
 				mainGame->ShowElement(mainGame->wMainMenu);
+				////kdiy////////
+#ifdef EK
+				mainGame->ShowElement(mainGame->wQQ);
+#endif
+				////kdiy////////
 				break;
 			}
 			case BUTTON_ROOMPASSWORD_OK: {
@@ -181,6 +235,11 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				mainGame->btnJoinHost->setEnabled(true);
 				mainGame->btnJoinCancel->setEnabled(true);
 				mainGame->HideElement(mainGame->wMainMenu);
+				////kdiy////////
+#ifdef EK
+				mainGame->HideElement(mainGame->wQQ);
+#endif
+				////kdiy////////
 				mainGame->ShowElement(mainGame->wLanWindow);
 				break;
 			}
@@ -194,6 +253,13 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 						mainGame->btnCreateHost->setEnabled(false);
 						mainGame->btnJoinHost->setEnabled(false);
 						mainGame->btnJoinCancel->setEnabled(false);
+						///////kdiy/////////////
+						for(size_t i = 0; i < mainGame->cbDeck2Select->getItemCount(); ++i) {
+							if(gGameConfig->lastdeckfolder == mainGame->cbDeck2Select->getItem(i)) {
+								mainGame->cbDeck2Select->setSelected(i);
+							}
+						}
+						///////kdiy/////////////
 					}
 					break;
 				}
@@ -205,6 +271,11 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 			case BUTTON_JOIN_CANCEL: {
 				mainGame->HideElement(mainGame->wLanWindow);
 				mainGame->ShowElement(mainGame->wMainMenu);
+				////kdiy////////
+#ifdef EK
+				mainGame->ShowElement(mainGame->wQQ);
+#endif
+				////kdiy////////
 				break;
 			}
 			case BUTTON_LAN_REFRESH: {
@@ -222,6 +293,13 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 					mainGame->stHostNotes->setVisible(false);
 					mainGame->ebHostNotes->setVisible(false);
 					mainGame->ShowElement(mainGame->wCreateHost);
+					///////kdiy/////////////
+					for(size_t i = 0; i < mainGame->cbDeck2Select->getItemCount(); ++i) {
+						if(gGameConfig->lastdeckfolder == mainGame->cbDeck2Select->getItem(i)) {
+							mainGame->cbDeck2Select->setSelected(i);
+						}
+					}
+					///////kdiy/////////////
 				}
 				break;
 			}
@@ -235,6 +313,13 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				mainGame->stHostNotes->setVisible(true);
 				mainGame->ebHostNotes->setVisible(true);
 				mainGame->ShowElement(mainGame->wCreateHost);
+				///////kdiy/////////////
+				for(size_t i = 0; i < mainGame->cbDeck2Select->getItemCount(); ++i) {
+					if(gGameConfig->lastdeckfolder == mainGame->cbDeck2Select->getItem(i)) {
+						mainGame->cbDeck2Select->setSelected(i);
+					}
+				}
+				///////kdiy/////////////
 				break;
 			}
 			case BUTTON_RULE_CARDS: {
@@ -247,6 +332,15 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 			}
 			case BUTTON_HOST_CONFIRM: {
 				DuelClient::is_local_host = false;
+				/////kdiy/////
+				mainGame->mode->isMode = false;
+				for(int i = 0; i < 6; ++i) {
+					if(gSoundManager->character[i] > CHARACTER_VOICE - 1)
+					    gSoundManager->character[i] = 0;
+					mainGame->ebCharacter[i]->setSelected(gSoundManager->character[i]);
+				    //mainGame->icon[i]->setImage(mainGame->imageManager.icon[gSoundManager->character[i]][gSoundManager->subcharacter[gSoundManager->character[i]]]);
+                }
+				///////kdiy///////
 				if(mainGame->isHostingOnline) {
 					ServerLobby::JoinServer(true);
 				} else {
@@ -290,8 +384,274 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				}
 				break;
 			}
+			/////kdiy/////
+			case BUTTON_SIMPLE_CREATE_HOST: {
+				if (wcslen(mainGame->ebNickName->getText())) {
+					mainGame->HideElement(mainGame->wLanWindow);
+					mainGame->ShowElement(mainGame->wCreateHost2);
+				}
+				break;
+			}
+			case BUTTON_LOCAL_HOST_CONFIRM: {
+				auto selected = mainGame->serverChoice2->getSelected();
+				if(selected < 0) break;
+				try {
+                    const auto serverinfo = epro::Host::resolve(ServerLobby::serversVector2[selected].address, ServerLobby::serversVector2[selected].duelport);
+					std::wstring pass = L"";
+					std::wstring symbol = L"#";
+					if(mainGame->chkAI->isChecked()) {
+					    pass += L"AI";
+						if(wcslen(mainGame->ebJoinPass2->getText()) <= 0)
+						    symbol = L"";
+					}
+					if(mainGame->chkTag->isChecked()) 
+					    pass += pass == L"" ? L"T" : L",T";
+					else {
+						if(wcslen(mainGame->ebJoinPass2->getText()) <= 0)
+					        pass += pass == L"" ? L"S" : L",S";
+					}
+					if(mainGame->chkMatch->isChecked()) 
+						pass += pass == L"" ? L"M" : L",M";
+					if(mainGame->cbRule2->getSelected() == 1)
+						pass += pass == L"" ? L"TO" : L",TO";
+					else if(mainGame->cbRule2->getSelected() == 2)
+						pass += pass == L"" ? L"OT" : L",OT";
+					if (std::stoi(mainGame->ebTimeLimit2->getText()) != 3)
+						pass += fmt::format(pass == L"" ? L"TM{}" : L",TM{}",mainGame->ebTimeLimit2->getText());
+					if (mainGame->cbDuelRule2->getSelected() != 4)
+						pass += fmt::format(pass == L"" ? L"MR{}" : L",MR{}", mainGame->cbDuelRule2->getSelected() + 1);
+					if(mainGame->chkNoCheckDeckContent2->isChecked()) 
+						pass += pass == L"" ? L"NC" : L",NC";
+					if(mainGame->chkNoShuffleDeck2->isChecked()) 
+						pass += pass == L"" ? L"NS" : L",NS";
+					if(mainGame->chkNoLFlist2->isChecked()) 
+						pass += pass == L"" ? L"NF" : L",NF";
+					if (std::stoi(mainGame->ebStartLP2->getText()) != 8000)
+					    pass += fmt::format(pass == L"" ? L"LP{}" : L",LP{}", mainGame->ebStartLP2->getText());
+					if (std::stoi(mainGame->ebStartHand2->getText()) != 5)
+						pass += fmt::format(pass == L"" ? L"ST{}" : L",ST{}", mainGame->ebStartHand2->getText());
+					if (std::stoi(mainGame->ebDrawCount2->getText()) != 1)
+						pass += fmt::format(pass == L"" ? L"DR{}" : L",DR{}", mainGame->ebDrawCount2->getText());
+					pass += symbol;
+					if(wcslen(mainGame->ebJoinPass2->getText()) > 0)
+						pass += std::wstring(mainGame->ebJoinPass2->getText());
+					if(mainGame->chkdefaultlocal->isChecked())
+					    pass = L"";	
+					if(pass.length() > 20) {
+						mainGame->PopupMessage(gDataManager->GetSysString(8033));
+						break;
+					}
+					mainGame->dInfo.secret.pass = pass;
+					if(DuelClient::StartClient(serverinfo.address, serverinfo.port, 0, false)) {
+						mainGame->btnCreateHost->setEnabled(false);
+						mainGame->btnJoinHost->setEnabled(false);
+						mainGame->btnJoinCancel->setEnabled(false);
+						for(size_t i = 0; i < mainGame->cbDeck2Select->getItemCount(); ++i) {
+							if(gGameConfig->lastdeckfolder == mainGame->cbDeck2Select->getItem(i)) {
+								mainGame->cbDeck2Select->setSelected(i);
+							}
+						}
+					}
+					break;
+				}
+				catch(...) {
+					mainGame->PopupMessage(gDataManager->GetSysString(1412));
+					break;
+				}
+			}
+			case BUTTON_LOCAL_HOST_CANCEL: {
+				if(DuelClient::IsConnected())
+					break;
+				mainGame->dInfo.isInLobby = false;
+				if(mainGame->wRules->isVisible())
+					mainGame->HideElement(mainGame->wRules);
+				mainGame->HideElement(mainGame->wCreateHost2);
+				mainGame->ShowElement(mainGame->wLanWindow);
+				break;
+			}
+			case BUTTON_ICON: {
+#ifndef VIP
+				break;
+#endif
+				bool filechk = mainGame->chantcheck();
+				if(!filechk)
+				    break;
+                auto elem = static_cast<irr::gui::CGUIImageButton*>(event.GUIEvent.Caller);
+				for(int i = 0; i < 6; ++i) {
+                    if(elem == mainGame->icon[i])
+                        mainGame->choose_player = i;
+                    if(elem == mainGame->icon2[i])
+                        mainGame->choose_player = i;
+                }
+				int player = gSoundManager->character[mainGame->choose_player];
+				mainGame->btnCharacter->setImage(mainGame->imageManager.bodycharacter[player][0]);
+				mainGame->btnCharacter_replay->setImage(mainGame->imageManager.bodycharacter[player][0]);
+				break;
+			}
+			case BUTTON_CHARACTER: {
+                auto elem = static_cast<irr::gui::CGUIImageButton*>(event.GUIEvent.Caller);
+				auto& replay = ReplayMode::cur_replay;
+                std::vector<uint8_t> team1, team2;
+				int team1count = mainGame->dInfo.team1, team2count = mainGame->dInfo.team2;
+                if(elem != mainGame->btnCharacter) {
+				    team1count = replay.GetPlayersCount(0);
+				    team2count = replay.GetPlayersCount(1);
+				}
+				for(uint8_t i = 0; i < team1count; i++)
+				    team1.push_back(i);
+				for(uint8_t i = team1count; i < team1count + team2count; i++)
+				    team2.push_back(i);
+				gSoundManager->PlayStartupChant(mainGame->choose_player, (mainGame->choose_player > team1count - 1) ? team1 : team2);
+				break;
+			}
+			case BUTTON_CHARACTER_SELECT2: {
+#ifndef VIP
+				break;
+#endif
+				if(gSoundManager->character[mainGame->choose_player] == CHARACTER_VOICE - 1) gSoundManager->character[mainGame->choose_player] = 0;
+				else gSoundManager->character[mainGame->choose_player] ++;
+				int player = gSoundManager->character[mainGame->choose_player];
+				mainGame->imageManager.LoadCharacter(player, gSoundManager->subcharacter[player]);
+				mainGame->btnCharacter->setImage(mainGame->imageManager.bodycharacter[player][0]);
+				mainGame->btnCharacter_replay->setImage(mainGame->imageManager.bodycharacter[player][0]);
+				mainGame->icon[mainGame->choose_player]->setImage(mainGame->imageManager.icon[player]);
+                mainGame->icon2[mainGame->choose_player]->setImage(mainGame->imageManager.icon[player]);
+                mainGame->ebCharacter[mainGame->choose_player]->setSelected(gSoundManager->character[mainGame->choose_player]);
+                mainGame->ebCharacter_replay[mainGame->choose_player]->setSelected(gSoundManager->character[mainGame->choose_player]);
+				if(mainGame->choose_player == 0)
+                    mainGame->ebCharacterDeck->setSelected(player);
+
+ 				auto elem = static_cast<irr::gui::CGUIImageButton*>(event.GUIEvent.Caller);
+				auto& replay = ReplayMode::cur_replay;
+                std::vector<uint8_t> team1, team2;
+				int team1count = mainGame->dInfo.team1, team2count = mainGame->dInfo.team2;
+                if(elem == mainGame->btnCharacterSelect2_replay) {
+					team1count = replay.GetPlayersCount(0);
+					team2count = replay.GetPlayersCount(1);
+				}
+				for(uint8_t i = 0; i < team1count; i++)
+					team1.push_back(i);
+				for(uint8_t i = team1count; i < team1count + team2count; i++)
+					team2.push_back(i);
+				// gSoundManager->PlayStartupChant(mainGame->choose_player, (mainGame->choose_player > team1count - 1) ? team1 : team2);
+				
+				if(player > 0 && gSoundManager->textcharacter[player-1].size() > 2) {
+					mainGame->btnsubCharacterSelect[0]->setVisible(true);
+					mainGame->btnsubCharacterSelect_replay[0]->setVisible(true);
+					for(int i = 2; i < 6; i++) {
+						if(gSoundManager->textcharacter[player-1].size() > i) {
+							mainGame->btnsubCharacterSelect[i-1]->setVisible(true);
+							mainGame->btnsubCharacterSelect_replay[i-1]->setVisible(true);
+						} else {
+							mainGame->btnsubCharacterSelect[i-1]->setVisible(false);
+							mainGame->btnsubCharacterSelect_replay[i-1]->setVisible(false);
+						}
+					}
+				} else {
+					for(int i = 0; i < 5; i++) {
+						mainGame->btnsubCharacterSelect[i]->setVisible(false);
+						mainGame->btnsubCharacterSelect_replay[i]->setVisible(false);
+					}
+				}
+				break;
+			}
+			case BUTTON_CHARACTER_SELECT: {
+#ifndef VIP
+				break;
+#endif
+				if(gSoundManager->character[mainGame->choose_player] == 0) gSoundManager->character[mainGame->choose_player] = CHARACTER_VOICE - 1;
+				else gSoundManager->character[mainGame->choose_player] --;
+				int player = gSoundManager->character[mainGame->choose_player];
+				mainGame->imageManager.LoadCharacter(player, gSoundManager->subcharacter[player]);
+				mainGame->btnCharacter->setImage(mainGame->imageManager.bodycharacter[player][0]);
+				mainGame->btnCharacter_replay->setImage(mainGame->imageManager.bodycharacter[player][0]);
+				mainGame->icon[mainGame->choose_player]->setImage(mainGame->imageManager.icon[player]);
+                mainGame->icon2[mainGame->choose_player]->setImage(mainGame->imageManager.icon[player]);
+                mainGame->ebCharacter[mainGame->choose_player]->setSelected(gSoundManager->character[mainGame->choose_player]);
+                mainGame->ebCharacter_replay[mainGame->choose_player]->setSelected(gSoundManager->character[mainGame->choose_player]);
+				if(mainGame->choose_player == 0)
+                    mainGame->ebCharacterDeck->setSelected(player);
+
+ 				auto elem = static_cast<irr::gui::CGUIImageButton*>(event.GUIEvent.Caller);
+				auto& replay = ReplayMode::cur_replay;
+                std::vector<uint8_t> team1, team2;
+				int team1count = mainGame->dInfo.team1, team2count = mainGame->dInfo.team2;
+                if(elem == mainGame->btnCharacterSelect1_replay) {
+					team1count = replay.GetPlayersCount(0);
+					team2count = replay.GetPlayersCount(1);
+				}
+				for(uint8_t i = 0; i < team1count; i++)
+					team1.push_back(i);
+				for(uint8_t i = team1count; i < team1count + team2count; i++)
+					team2.push_back(i);
+				// gSoundManager->PlayStartupChant(mainGame->choose_player, (mainGame->choose_player > team1count - 1) ? team1 : team2);
+				
+				if(player > 0 && gSoundManager->textcharacter[player-1].size() > 2) {
+					mainGame->btnsubCharacterSelect[0]->setVisible(true);
+					mainGame->btnsubCharacterSelect_replay[0]->setVisible(true);
+					for(int i = 2; i < 6; i++) {
+						if(gSoundManager->textcharacter[player-1].size() > i) {
+							mainGame->btnsubCharacterSelect[i-1]->setVisible(true);
+							mainGame->btnsubCharacterSelect_replay[i-1]->setVisible(true);
+						} else {
+							mainGame->btnsubCharacterSelect[i-1]->setVisible(false);
+							mainGame->btnsubCharacterSelect_replay[i-1]->setVisible(false);
+						}
+					}
+				} else {
+					for(int i = 0; i < 5; i++) {
+						mainGame->btnsubCharacterSelect[i]->setVisible(false);
+						mainGame->btnsubCharacterSelect_replay[i]->setVisible(false);
+					}
+				}
+				break;
+			}
+			case BUTTON_SUBCHARACTER_SELECT: {
+#ifndef VIP
+				    break;
+#endif
+				auto elem = static_cast<irr::gui::CGUIImageButton*>(event.GUIEvent.Caller);
+				int player = gSoundManager->character[mainGame->choose_player];
+				for(int i = 0; i < 5; ++i) {
+                    if(elem == mainGame->btnsubCharacterSelect[i] || elem == mainGame->btnsubCharacterSelect_replay[i]) {
+						mainGame->imageManager.LoadCharacter(player, i);
+						mainGame->btnCharacter->setImage(mainGame->imageManager.bodycharacter[player][0]);
+						mainGame->btnCharacter_replay->setImage(mainGame->imageManager.bodycharacter[player][0]);
+						mainGame->icon[mainGame->choose_player]->setImage(mainGame->imageManager.icon[player]);
+                		mainGame->icon2[mainGame->choose_player]->setImage(mainGame->imageManager.icon[player]);
+					}
+				}
+				break;
+			}
+			case BUTTON_PW: {
+#ifdef Update_PW
+				auto pw = mainGame->ebPw->getText();
+				std::string t(Update_PW);
+				std::wstring a(t.begin(), t.end());
+				if(!Utils::FileExists(EPRO_TEXT("./updates/configs.json"))) {
+					if(a.compare(pw) == 0) {
+					    gClientUpdater->StartUpdate(Game::UpdateDownloadBar, mainGame);
+						mainGame->PopupElement(mainGame->updateWindow);
+						break;
+					} else update_trial++;
+				} else update_trial = 3;
+				if(update_trial > 2) {
+					mainGame->btnLanMode->setEnabled(false);
+					if(!Utils::FileExists(EPRO_TEXT("./updates/configs.json")) && Utils::FileExists(EPRO_TEXT("./config/configs.json"))) {
+						Utils::MakeDirectory(EPRO_TEXT("updates"));
+					    Utils::FileCopy(EPRO_TEXT("./config/configs.json"), EPRO_TEXT("./updates/configs.json"));
+					}
+					mainGame->HideElement(mainGame->pwupdateWindow);
+				}
+#endif
+				break;
+			}
+			/////kdiy/////
 			case BUTTON_HP_DUELIST: {
 				mainGame->cbDeckSelect->setEnabled(true);
+				/////kdiy/////
+				mainGame->cbDeck2Select->setEnabled(true);
+				/////kdiy/////
 				DuelClient::SendPacketToServer(CTOS_HS_TODUELIST);
 				break;
 			}
@@ -309,14 +669,23 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 			}
 			case BUTTON_HP_READY: {
 				const auto selected = mainGame->cbDeckSelect->getSelected();
-				if(selected == -1)
-					break;
-				if(!mainGame->deckBuilder.SetCurrentDeckFromFile(Utils::ToPathString(mainGame->cbDeckSelect->getItem(selected)), false,
-																 mainGame->dInfo.HasFieldFlag(DUEL_EXTRA_DECK_RITUAL) ? RITUAL_LOCATION::EXTRA : RITUAL_LOCATION::MAIN))
+				//////kdiy/////
+				//if(selected == -1)
+					//break;
+				//if(!mainGame->deckBuilder.SetCurrentDeckFromFile(Utils::ToPathString(mainGame->cbDeckSelect->getItem(selected)), false,
+																//  mainGame->dInfo.HasFieldFlag(DUEL_EXTRA_DECK_RITUAL) ? RITUAL_LOCATION::EXTRA : RITUAL_LOCATION::MAIN))
+				auto folder = Utils::ToPathString(mainGame->cbDeck2Select->getSelected() < 1 ? L"" : epro::format(L"{}/", mainGame->cbDeck2Select->getItem(mainGame->cbDeck2Select->getSelected())));
+				if(mainGame->cbDeck2Select->getSelected() == -1 || selected == -1 || 
+					!mainGame->deckBuilder.SetCurrentDeckFromFile(folder + Utils::ToPathString(mainGame->cbDeckSelect->getItem(selected)), false,
+					   mainGame->dInfo.HasFieldFlag(DUEL_EXTRA_DECK_RITUAL) ? RITUAL_LOCATION::EXTRA : RITUAL_LOCATION::MAIN))
+				//////kdiy/////
 					break;
 				UpdateDeck();
 				DuelClient::SendPacketToServer(CTOS_HS_READY);
 				mainGame->cbDeckSelect->setEnabled(false);
+				/////kdiy/////
+				mainGame->cbDeck2Select->setEnabled(false);
+				/////kdiy/////
 				if(mainGame->dInfo.team1 + mainGame->dInfo.team2 > 2)
 					mainGame->btnHostPrepDuelist->setEnabled(false);
 				break;
@@ -324,6 +693,9 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 			case BUTTON_HP_NOTREADY: {
 				DuelClient::SendPacketToServer(CTOS_HS_NOTREADY);
 				mainGame->cbDeckSelect->setEnabled(true);
+				/////kdiy/////
+				mainGame->cbDeck2Select->setEnabled(true);
+				/////kdiy/////
 				if(mainGame->dInfo.team1 + mainGame->dInfo.team2 > 2)
 					mainGame->btnHostPrepDuelist->setEnabled(true);
 				break;
@@ -353,6 +725,12 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 			}
 			case BUTTON_REPLAY_MODE: {
 				mainGame->HideElement(mainGame->wMainMenu);
+				////kdiy////////
+#ifdef EK
+				mainGame->HideElement(mainGame->wQQ);
+#endif
+                mainGame->btnCharacterSelect_replay->setEnabled(false);
+				////kdiy////////
 				mainGame->stReplayInfo->setText(L"");
 				mainGame->btnLoadReplay->setEnabled(false);
 				mainGame->btnDeleteReplay->setEnabled(false);
@@ -366,8 +744,43 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				mainGame->RefreshReplay();
 				break;
 			}
+			/////kdiy//////
+			case BUTTON_ENTERTAUNMENT_MODE: {
+ 				mainGame->HideElement(mainGame->wMainMenu);
+#ifdef EK
+				mainGame->HideElement(mainGame->wQQ);
+#endif
+				mainGame->stEntertainmentPlayInfo->setText(L"");
+				mainGame->ShowElement(mainGame->wEntertainmentPlay);
+				mainGame->mode->RefreshEntertainmentPlay(mainGame->mode->modeTexts);
+				mainGame->mode->RefreshControlState(0);
+				mainGame->mode->InitializeMode();
+				break;
+			}
+			case BUTTON_ENTERTAUNMENT_START_GAME: {
+				DuelClient::SendPacketToServer(CTOS_HS_START);
+				break;
+			}
+			case BUTTON_ENTERTAUNMENT_EXIT_GAME: {
+				DuelClient::StopClient();
+				mainGame->dInfo.isInLobby = false;
+				mainGame->mode->DestoryMode();
+				mainGame->HideElement(mainGame->wEntertainmentPlay);
+				mainGame->ShowElement(mainGame->wMainMenu);
+#ifdef EK
+				mainGame->ShowElement(mainGame->wQQ);
+#endif
+				mainGame->wChat->setVisible(false);
+				break;
+			}
+            /////kdiy//////
 			case BUTTON_SINGLE_MODE: {
 				mainGame->HideElement(mainGame->wMainMenu);
+				////kdiy////////
+#ifdef EK
+				mainGame->HideElement(mainGame->wQQ);
+#endif
+				////kdiy////////
 				mainGame->stSinglePlayInfo->setText(L"");
 				mainGame->btnLoadSinglePlay->setEnabled(false);
 				mainGame->btnDeleteSinglePlay->setEnabled(false);
@@ -379,6 +792,10 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				break;
 			}
 			case BUTTON_LOAD_REPLAY: {
+                ////kdiy////////
+                if(mainGame->wCharacterReplay->isVisible())
+                    mainGame->HideElement(mainGame->wCharacterReplay);
+                ////kdiy////////
 				if(mainGame->lstReplayList->isDirectory(mainGame->lstReplayList->getSelected()))
 					mainGame->lstReplayList->enterDirectory(mainGame->lstReplayList->getSelected());
 				else
@@ -419,6 +836,13 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 			case BUTTON_CANCEL_REPLAY: {
 				mainGame->HideElement(mainGame->wReplay);
 				mainGame->ShowElement(mainGame->wMainMenu);
+				////kdiy////////
+                if(mainGame->wCharacterReplay->isVisible())
+                    mainGame->HideElement(mainGame->wCharacterReplay);
+#ifdef EK
+				mainGame->ShowElement(mainGame->wQQ);
+#endif
+				////kdiy////////
 				break;
 			}
 			case BUTTON_HP_AI_TOGGLE: {
@@ -432,6 +856,12 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 			}
 			case BUTTON_BOT_ADD: {
 				try {
+					////////kdiy/////
+					if (mainGame->gBot.aiDeckSelect->getSelected() != -1) {
+					   gGameConfig->lastAIdeckfolder = mainGame->gBot.aiDeckSelect2->getItem(mainGame->gBot.aiDeckSelect2->getSelected());
+					   gGameConfig->lastAIdeck = mainGame->gBot.aiDeckSelect->getItem(mainGame->gBot.aiDeckSelect->getSelected());
+					}
+					////////kdiy/////
 					int port = std::stoi(gGameConfig->serverport);
 					if(mainGame->gBot.LaunchSelected(port, mainGame->dInfo.secret.pass))
 						break;
@@ -451,6 +881,92 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				} catch(...) {}
 				break;
 			}
+            ////kdiy////////
+            case BUTTON_CHARACTER_REPLAY: {
+                for(int i = 0; i < 6; i++) {
+                    mainGame->icon2[i]->setVisible(false);
+                    mainGame->ebName_replay[i]->setVisible(false);
+                    mainGame->btnCharacterSelect_replayreset[i]->setVisible(false);
+                    mainGame->ebCharacter_replay[i]->setVisible(false);
+                }
+#ifndef VIP
+                Utils::SystemOpen(EPRO_TEXT("https://afdian.com/p/af7099f4b5fa11ef98ba52540025c377/"), Utils::OPEN_URL);
+				break;
+#endif
+				mainGame->PopupElement(mainGame->wCharacterReplay);
+				mainGame->env->setFocus(mainGame->wCharacterReplay);
+                auto& replay = ReplayMode::cur_replay;
+				const auto& names1 = replay.GetPlayerNames();
+				auto& names = replay.playersC;
+                if(names.empty() || names.size() < 2)
+                    names.assign(names1.begin(), names1.end());
+				for(int i = 0; i < replay.GetPlayersCount(0); i++) {
+                    if(gSoundManager->character[i] > CHARACTER_VOICE - 1)
+					    mainGame->imageManager.icon[gSoundManager->character[i]] = 0;
+                    mainGame->icon2[i]->setVisible(true);
+                    mainGame->icon2[i]->setRelativePosition(mainGame->Resize(40, 45 + i * 35, 70, 75 + i * 35));
+				    mainGame->icon2[i]->setImage(mainGame->imageManager.icon[gSoundManager->character[i]]);
+                    mainGame->ebName_replay[i]->setVisible(true);
+                    mainGame->ebName_replay[i]->setRelativePosition(mainGame->Resize(80, 50 + i * 35, 160, 70 + i * 35));
+                    mainGame->ebName_replay[i]->setText(Utils::ToUnicodeIfNeeded(names[i]).c_str());
+                    mainGame->btnCharacterSelect_replayreset[i]->setVisible(true);
+                    mainGame->btnCharacterSelect_replayreset[i]->setRelativePosition(mainGame->Resize(165, 50 + i * 35, 225, 70 + i * 35));
+                    mainGame->ebCharacter_replay[i]->setVisible(true);
+					mainGame->ebCharacter_replay[i]->setRelativePosition(mainGame->Resize(230, 50 + i * 35, 330, 70 + i * 35));
+				}
+                int height = 65 + 15 + (replay.GetPlayersCount(0) - 1) * 35;
+                mainGame->stCharacterReplay->setRelativePosition(mainGame->Resize(80, height, 180, height + 20));
+                height = height + 20 + 15;
+				for(int i = 0; i < replay.GetPlayersCount(1); i++) {
+                    int j = i + replay.GetPlayersCount(0);
+                    if(gSoundManager->character[j] > CHARACTER_VOICE - 1)
+					    mainGame->imageManager.icon[gSoundManager->character[j]] = 0;
+                    mainGame->icon2[j]->setVisible(true);
+                    mainGame->icon2[j]->setRelativePosition(mainGame->Resize(40, height + i * 35, 70, height + 30 + i * 35));
+				    mainGame->icon2[j]->setImage(mainGame->imageManager.icon[gSoundManager->character[j]]);
+                    mainGame->ebName_replay[j]->setVisible(true);
+                    mainGame->ebName_replay[j]->setRelativePosition(mainGame->Resize(80, height + i * 35 + 5, 160, height + 30 + i * 35 - 5));
+                    mainGame->ebName_replay[j]->setText(Utils::ToUnicodeIfNeeded(names[j]).c_str());
+                    mainGame->btnCharacterSelect_replayreset[j]->setVisible(true);
+                    mainGame->btnCharacterSelect_replayreset[j]->setRelativePosition(mainGame->Resize(165, height + i * 35 + 5, 225, height + 30 + i * 35 - 5));
+                    mainGame->ebCharacter_replay[j]->setVisible(true);
+                    mainGame->ebCharacter_replay[j]->setRelativePosition(mainGame->Resize(230, height + i * 35 + 5, 330, height + 30 + i * 35 - 5));
+				}
+                mainGame->btnCharacterSelect_replayclose->setRelativePosition(mainGame->Resize(80, height + 20 + 15 + (replay.GetPlayersCount(1) - 1) * 35, 180, height + 20 + 15 + 20 + (replay.GetPlayersCount(1) - 1) * 35));
+                break;
+			}
+            case BUTTON_NAMERESET_REPLAY: {
+                auto& replay = ReplayMode::cur_replay;
+				const auto& names1 = replay.GetPlayerNames();
+				auto& names = replay.playersC;
+				if(names.empty() || names.size() < 2) break;
+				auto elem = static_cast<irr::gui::IGUIButton*>(event.GUIEvent.Caller);
+                for(int i = 0; i < 6; i++) {
+                    if(elem == mainGame->btnCharacterSelect_replayreset[i]) {
+                        names[i] = names1[i];
+                        mainGame->ebName_replay[i]->setText(Utils::ToUnicodeIfNeeded(names[i]).c_str());
+                    }
+                }
+                std::wstring repinfo;
+				time_t curtime = replay.pheader.base.timestamp;
+				repinfo.append(epro::format(L"{:%Y/%m/%d %H:%M:%S}\n", epro::localtime(curtime)));
+				for(int i = 0; i < replay.GetPlayersCount(0); i++) {
+					repinfo.append(names[i] + L"\n");
+				}
+				repinfo.append(L"===VS===\n");
+				for(int i = 0; i < replay.GetPlayersCount(1); i++) {
+					repinfo.append(names[i + replay.GetPlayersCount(0)] + L"\n");
+				}
+				if(replay.GetTurnsCount())
+					repinfo.append(epro::format(L"\n{}: {}", gDataManager->GetSysString(2009), replay.GetTurnsCount()));
+				mainGame->stReplayInfo->setText(repinfo.data());
+				break;
+			}
+            case BUTTON_CHARACTEROK_REPLAY: {
+				mainGame->HideElement(mainGame->wCharacterReplay);
+				break;
+			}
+            ////kdiy////////
 			case BUTTON_EXPORT_DECK: {
 				auto sanitize = [](epro::path_string text) {
 					constexpr wchar_t chars[] = L"<>:\"/\\|?*";
@@ -530,20 +1046,50 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 					break;
 				mainGame->HideElement(mainGame->wSinglePlay);
 				mainGame->ShowElement(mainGame->wMainMenu);
+				////kdiy////////
+#ifdef EK
+				mainGame->ShowElement(mainGame->wQQ);
+#endif
+				////kdiy////////
 				break;
 			}
 			case BUTTON_DECK_EDIT: {
-				mainGame->RefreshDeck(mainGame->cbDBDecks);
-				if(open_file && mainGame->deckBuilder.SetCurrentDeckFromFile(open_file_name, true)) {
-					auto name = Utils::GetFileName(open_file_name);
+				//////kdiy/////
+				//mainGame->RefreshDeck(mainGame->cbDBDecks);
+				// if(open_file && mainGame->deckBuilder.SetCurrentDeckFromFile(open_file_name, true)) {
+				// 	auto name = Utils::GetFileName(open_file_name);
+				//mainGame->btnLeaveGame->setRelativePosition(mainGame->Resize(205, 137, 295, 187));
+				mainGame->RefreshDeck(mainGame->cbDBDecks, true);
+				auto folder = Utils::ToPathString(mainGame->cbDBDecks2->getSelected() < 1 ? L"" : epro::format(L"{}/", mainGame->cbDBDecks2->getItem(mainGame->cbDBDecks2->getSelected())));
+				if(mainGame->cbDBDecks2->getSelected() >= 0) {
+                	for(uint32_t i = 0; i < mainGame->cbDBDecks2->getItemCount() - 1; i++)
+                    	mainGame->cbDBDecks22->addItem(mainGame->cbDBDecks2->getItem(i));
+                }
+				if(open_file && mainGame->deckBuilder.SetCurrentDeckFromFile(folder + open_file_name, true)) {
+					auto name = Utils::GetFileName(folder + open_file_name);
+				//////kdiy/////
 					mainGame->ebDeckname->setText(Utils::ToUnicodeIfNeeded(name).data());
+					//////kdiy/////
+					mainGame->cbDBDecks2->setSelected(-1);
+                    mainGame->cbDBDecks22->setSelected(-1);
+					//////kdiy/////
 					mainGame->cbDBDecks->setSelected(-1);
 					open_file = false;
-				} else if(mainGame->cbDBDecks->getSelected() != -1) {
-					mainGame->deckBuilder.SetCurrentDeckFromFile(Utils::ToPathString(mainGame->cbDBDecks->getItem(mainGame->cbDBDecks->getSelected())), true);
+				//////kdiy/////
+				// } else if(mainGame->cbDBDecks->getSelected() != -1) {
+				} else if(mainGame->cbDBDecks->getSelected() >= 0 && mainGame->cbDBDecks2->getSelected() >= 0) {
+					// mainGame->deckBuilder.SetCurrentDeckFromFile(Utils::ToPathString(mainGame->cbDBDecks->getItem(mainGame->cbDBDecks->getSelected())), true);
+					mainGame->deckBuilder.SetCurrentDeckFromFile(folder + Utils::ToPathString(mainGame->cbDBDecks->getItem(mainGame->cbDBDecks->getSelected())), true);
+                    mainGame->cbDBDecks22->setSelected(mainGame->cbDBDecks2->getSelected());
+                //////kdiy/////
 					mainGame->ebDeckname->setText(L"");
 				}
 				mainGame->HideElement(mainGame->wMainMenu);
+				////kdiy////////
+#ifdef EK
+				mainGame->HideElement(mainGame->wQQ);
+#endif
+				////kdiy////////
 				mainGame->deckBuilder.Initialize();
 				break;
 			}
@@ -577,13 +1123,25 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 					break;
 				}
 				case ACTION_UPDATE_PROMPT: {
+					///kdiy//////////
+					// gClientUpdater->StartUpdate(Game::UpdateDownloadBar, mainGame);
+					// mainGame->HideElement(mainGame->wMainMenu);
+					// mainGame->PopupElement(mainGame->updateWindow);
+					Utils::SystemOpen(EPRO_TEXT("https://jq.qq.com/?_wv=1027&k=S1vfY66P"), Utils::OPEN_URL);
+#if defined(Update_PW)
+					mainGame->PopupElement(mainGame->pwupdateWindow);
+#else
 					gClientUpdater->StartUpdate(Game::UpdateDownloadBar, mainGame);
-					mainGame->HideElement(mainGame->wMainMenu);
+					mainGame->wMainMenu->setVisible(false);
 					mainGame->PopupElement(mainGame->updateWindow);
+#endif
+					///kdiy//////////
 					break;
 				}
 				case ACTION_SHOW_CHANGELOG: {
-					Utils::SystemOpen(EPRO_TEXT("https://github.com/edo9300/edopro/releases"), Utils::OPEN_URL);
+					Utils::SystemOpen(EPRO_TEXT("https://afdian.com/p/7676acb6c0af11ed898652540025c377/"), Utils::OPEN_URL);
+					mainGame->btnNo->setVisible(true);
+					mainGame->btnNo->setEnabled(true);
 					break;
 				}
 				case ACTION_ACKNOWLEDGE_HOST: {
@@ -604,7 +1162,17 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 					break;
 #endif
 				case ACTION_UPDATE_PROMPT:
+				/////kdiy///////
+				    gGameConfig->system_engine = false;
+					Utils::DeleteDirectory(EPRO_TEXT("./config/languages/"));
+                    Utils::DeleteDirectory(EPRO_TEXT("./repositories/kcg/"));
+				/////kdiy///////
 				case ACTION_SHOW_CHANGELOG:
+                    /////kdiy///////
+				    gGameConfig->system_engine = true;
+					mainGame->btnNo->setVisible(true);
+					mainGame->btnNo->setEnabled(true);
+                    /////kdiy///////
 					mainGame->wQuery->setRelativePosition(mainGame->ResizeWin(490, 200, 840, 340)); // from Game::OnResize
 				default:
 					break;
@@ -656,6 +1224,17 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 		}
 		case irr::gui::EGET_LISTBOX_CHANGED: {
 			switch(id) {
+			/////kdiy/////
+			case LISTBOX_ENTERTAINMENTPLAY_LIST: {
+				int sel = mainGame->lstEntertainmentPlayList->getSelected();
+				mainGame->mode->modeIndex = sel;
+				if(sel != -1) {
+					mainGame->mode->RefreshControlState(mainGame->mode->modeIndex + 1);
+					mainGame->mode->SetControlState(mainGame->mode->modeIndex);
+				}
+				break;
+			}
+		    /////kdiy/////
 			case LISTBOX_LAN_HOST: {
 				int sel = mainGame->lstHostList->getSelected();
 				if(sel == -1)
@@ -668,6 +1247,10 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 			case LISTBOX_REPLAY_LIST: {
 				int sel = mainGame->lstReplayList->getSelected();
 				mainGame->stReplayInfo->setText(L"");
+                /////kdiy/////
+                mainGame->wCharacterReplay->setVisible(false);
+                mainGame->btnCharacterSelect_replay->setEnabled(false);
+                /////kdiy/////
 				mainGame->btnLoadReplay->setEnabled(false);
 				mainGame->btnDeleteReplay->setEnabled(false);
 				mainGame->btnRenameReplay->setEnabled(false);
@@ -687,6 +1270,9 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 
 				bool can_be_played = replay.CanBePlayedInStreamedMode() || replay.CanBePlayedInOldMode();
 				mainGame->btnLoadReplay->setEnabled(can_be_played);
+                /////kdiy/////
+                mainGame->btnCharacterSelect_replay->setEnabled(can_be_played);
+                /////kdiy/////
 
 				mainGame->btnDeleteReplay->setEnabled(true);
 				mainGame->btnRenameReplay->setEnabled(true);
@@ -695,7 +1281,13 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				std::wstring repinfo;
 				time_t curtime = replay.pheader.base.timestamp;
 				repinfo.append(epro::format(L"{:%Y/%m/%d %H:%M:%S}\n", epro::localtime(curtime)));
-				const auto& names = replay.GetPlayerNames();
+                ///kdiy////
+				//const auto& names = replay.GetPlayerNames();
+				const auto& names1 = replay.GetPlayerNames();
+                auto& names = replay.playersC;
+                if(names.empty() || names.size() < 2)
+                    names.assign(names1.begin(), names1.end());
+                ///kdiy////
 				for(int i = 0; i < replay.GetPlayersCount(0); i++) {
 					repinfo.append(names[i] + L"\n");
 				}
@@ -763,6 +1355,10 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				}
 			}
 			case LISTBOX_REPLAY_LIST: {
+                ////kdiy////////
+                if(mainGame->wCharacterReplay->isVisible())
+                     mainGame->HideElement(mainGame->wCharacterReplay);
+                ////kdiy////////
 				if(mainGame->lstReplayList->isDirectory(mainGame->lstReplayList->getSelected()))
 					mainGame->lstReplayList->enterDirectory(mainGame->lstReplayList->getSelected());
 				else
@@ -790,6 +1386,102 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 		}
 		case irr::gui::EGET_CHECKBOX_CHANGED: {
 			switch(id) {
+			/////kdiy/////
+			case CHECKBOX_OPPLP: {
+				gGameConfig->chkOppLP = mainGame->chkOppLP->isChecked();
+				mainGame->UpdateExtraRules();
+				break;
+			}
+			case CHECKBOX_OPPLP2: {
+				gGameConfig->chkOppLP = mainGame->chkOppLP2->isChecked();
+				mainGame->UpdateExtraRules();
+				break;
+			}
+			case CHECKBOX_OPPHAND: {
+				gGameConfig->chkOppHand = mainGame->chkOppHand->isChecked();
+				mainGame->UpdateExtraRules();
+				break;
+			}
+			case CHECKBOX_OPPHAND2: {
+				gGameConfig->chkOppHand = mainGame->chkOppHand2->isChecked();
+				mainGame->UpdateExtraRules();
+				break;
+			}
+			case CHECKBOX_ENTERTAUNMENT_MODE_1_CHECK: {
+				if(mainGame->chkEntertainmentMode_1Check->isChecked())
+					mainGame->cbEntertainmentMode_1Bot->setEnabled(true);
+				else
+					mainGame->cbEntertainmentMode_1Bot->setEnabled(false);
+				break;
+			}
+			case CHECKBOX_ENTERTAUNMENT_READY:{
+				if(mainGame->chkEntertainmentPrepReady->isChecked()) {
+					mainGame->lstEntertainmentPlayList->setEnabled(false);
+					mainGame->chkEntertainmentMode_1Check->setEnabled(false);
+					mainGame->cbEntertainmentMode_1Bot->setEnabled(false);
+					mainGame->mode->SetRule(mainGame->mode->modeIndex);
+					DuelClient::is_local_host = false;
+					uint16_t host_port;
+					try {
+						host_port = static_cast<uint16_t>(std::stoul(mainGame->ebHostPort->getText()));
+					}
+					catch(...) {
+						break;
+					}
+                    if(!NetServer::StartServer(host_port)) {
+                        mainGame->mode->isMode = false;
+                        break;
+                    }
+					const auto ip = 0x100007F; //127.0.0.1 in network byte order
+					if(!DuelClient::StartClient({ &ip, epro::Address::INET }, host_port)) {
+                        NetServer::StopServer();
+                        mainGame->mode->isMode = false;
+                        break;
+                    }
+					DuelClient::is_local_host = true;
+					try {
+						mainGame->mode->LoadWindBot(host_port, L"");
+					}
+					catch(...)
+					{
+						mainGame->PopupMessage(L"Failed to launch windbot");
+                        mainGame->mode->isMode = false;
+					}
+                    break;
+				} else {
+					mainGame->lstEntertainmentPlayList->setEnabled(true);
+					mainGame->btnEntertainmentStartGame->setEnabled(false);
+					mainGame->chkEntertainmentMode_1Check->setEnabled(true);
+					if(mainGame->chkEntertainmentMode_1Check->isChecked())
+						mainGame->cbEntertainmentMode_1Bot->setEnabled(true);
+					else
+						mainGame->cbEntertainmentMode_1Bot->setEnabled(false);
+					DuelClient::StopClient();
+				}
+				break;
+			}
+			case CHECKBOX_DEFAULT_LOCAL: {
+				bool chk = true;
+				if(mainGame->chkdefaultlocal->isChecked()) {
+					chk = false;
+                    mainGame->chkAI->setChecked(false);
+                }
+				mainGame->cbRule2->setEnabled(chk);
+				mainGame->chkAI->setEnabled(chk);
+				mainGame->ebTimeLimit2->setEnabled(chk);
+				mainGame->cbDuelRule2->setEnabled(chk);
+				mainGame->chkNoCheckDeckContent2->setEnabled(chk);
+				mainGame->chkNoShuffleDeck2->setEnabled(chk);
+				mainGame->chkNoLFlist2->setEnabled(chk);
+				mainGame->chkTag->setEnabled(chk);
+				mainGame->chkMatch->setEnabled(chk);
+				mainGame->ebStartLP2->setEnabled(chk);
+				mainGame->ebStartHand2->setEnabled(chk);
+				mainGame->ebDrawCount2->setEnabled(chk);
+				mainGame->ebJoinPass2->setEnabled(chk);
+				break;
+			}
+			////kdiy///////
 			case CHECK_SHOW_LOCKED_ROOMS: {
 				ServerLobby::FillOnlineRooms();
 				break;
@@ -806,21 +1498,34 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				mainGame->env->setFocus(mainGame->wHostPrepare);
 				if(static_cast<irr::gui::IGUICheckBox*>(caller)->isChecked()) {
 					const auto selected = mainGame->cbDeckSelect->getSelected();
-					if(selected == -1 ||
-					   !mainGame->deckBuilder.SetCurrentDeckFromFile(
-						   Utils::ToPathString(mainGame->cbDeckSelect->getItem(selected)), false,
+					///////kdiy////
+					//if(selected == -1 ||
+					    //!mainGame->deckBuilder.SetCurrentDeckFromFile(
+						   //Utils::ToPathString(mainGame->cbDeckSelect->getItem(selected)), false,
+						   //mainGame->dInfo.HasFieldFlag(DUEL_EXTRA_DECK_RITUAL) ? RITUAL_LOCATION::EXTRA : RITUAL_LOCATION::MAIN)) {
+					auto folder = Utils::ToPathString(mainGame->cbDeck2Select->getSelected() < 1 ? L"" : epro::format(L"{}/", mainGame->cbDeck2Select->getItem(mainGame->cbDeck2Select->getSelected())));
+					if(mainGame->cbDeck2Select->getSelected() == -1 || selected == -1 ||
+						!mainGame->deckBuilder.SetCurrentDeckFromFile(
+						   folder + Utils::ToPathString(mainGame->cbDeckSelect->getItem(selected)), false,
 						   mainGame->dInfo.HasFieldFlag(DUEL_EXTRA_DECK_RITUAL) ? RITUAL_LOCATION::EXTRA : RITUAL_LOCATION::MAIN)) {
+					///////kdiy////
 						static_cast<irr::gui::IGUICheckBox*>(caller)->setChecked(false);
 						break;
 					}
 					UpdateDeck();
 					DuelClient::SendPacketToServer(CTOS_HS_READY);
 					mainGame->cbDeckSelect->setEnabled(false);
+					///////kdiy////
+					mainGame->cbDeck2Select->setEnabled(false);
+					///////kdiy////
 					if(mainGame->dInfo.team1 + mainGame->dInfo.team2 > 2)
 						mainGame->btnHostPrepDuelist->setEnabled(false);
 				} else {
 					DuelClient::SendPacketToServer(CTOS_HS_NOTREADY);
 					mainGame->cbDeckSelect->setEnabled(true);
+					///////kdiy////
+					mainGame->cbDeck2Select->setEnabled(true);
+					///////kdiy////
 					if(mainGame->dInfo.team1 + mainGame->dInfo.team2 > 2)
 						mainGame->btnHostPrepDuelist->setEnabled(true);
 				}
@@ -854,6 +1559,35 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 		}
 		case irr::gui::EGET_EDITBOX_CHANGED: {
 			switch(id) {
+            //kdiy///////
+            case EDITBOX_REPLAYNAME: {
+                auto& replay = ReplayMode::cur_replay;
+				const auto& names1 = replay.GetPlayerNames();
+                auto& names = replay.playersC;
+                if(names.empty() || names.size() < 2)
+                    names.assign(names1.begin(), names1.end());
+				auto elem = static_cast<irr::gui::IGUIEditBox*>(event.GUIEvent.Caller);
+                for(int i = 0; i < 6; i++) {
+					if(elem == mainGame->ebName_replay[i]) {
+						names[i] = epro::format(L"{}", elem->getText());
+					}
+                }
+                std::wstring repinfo;
+				time_t curtime = replay.pheader.base.timestamp;
+				repinfo.append(epro::format(L"{:%Y/%m/%d %H:%M:%S}\n", epro::localtime(curtime)));
+				for(int i = 0; i < replay.GetPlayersCount(0); i++) {
+					repinfo.append(names[i] + L"\n");
+				}
+				repinfo.append(L"===VS===\n");
+				for(int i = 0; i < replay.GetPlayersCount(1); i++) {
+					repinfo.append(names[i + replay.GetPlayersCount(0)] + L"\n");
+				}
+				if(replay.GetTurnsCount())
+					repinfo.append(epro::format(L"\n{}: {}", gDataManager->GetSysString(2009), replay.GetTurnsCount()));
+				mainGame->stReplayInfo->setText(repinfo.data());
+				break;
+			}
+            //kdiy///////
 			case EDITBOX_PORT_BOX: {
 				const wchar_t* text = caller->getText();
 				wchar_t filtered[20];
@@ -902,6 +1636,36 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				ServerLobby::FillOnlineRooms();
 			break;
 		}
+		//////kdiy////////
+		case irr::gui::EGET_EDITBOX_ENTER: {
+			switch(id) {
+				case EDITBOX_PASSWORD: {
+#ifdef Update_PW
+					auto pw = mainGame->ebPw->getText();
+					std::string t(Update_PW);
+					std::wstring a(t.begin(), t.end());
+					if(!Utils::FileExists(EPRO_TEXT("./updates/configs.json"))) {
+						if(a.compare(pw) == 0) {
+							gClientUpdater->StartUpdate(Game::UpdateDownloadBar, mainGame);
+							mainGame->PopupElement(mainGame->updateWindow);
+							break;
+						} else update_trial++;
+					} else
+					    update_trial = 3;
+					if(update_trial > 2) {
+						mainGame->btnLanMode->setEnabled(false);
+						if(!Utils::FileExists(EPRO_TEXT("./updates/configs.json")) && Utils::FileExists(EPRO_TEXT("./config/configs.json"))) {
+							Utils::MakeDirectory(EPRO_TEXT("updates"));
+						    Utils::FileCopy(EPRO_TEXT("./config/configs.json"), EPRO_TEXT("./updates/configs.json"));
+						}
+						mainGame->HideElement(mainGame->pwupdateWindow);
+					}
+#endif
+					break;
+				}
+			}
+		}
+		//////kdiy////////
 		case irr::gui::EGET_TAB_CHANGED: {
 			switch(id) {
 			case TAB_CONTROL_CREATE_HOST: {
@@ -1037,6 +1801,29 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 			}
 			case COMBOBOX_BOT_DECK: {
 				gGameConfig->lastBot = mainGame->gBot.CurrentIndex();
+				///////kdiy//////////
+				const auto& bot = mainGame->gBot.bots[mainGame->gBot.CurrentIndex()];
+				if (bot.deck == L"AI_perfectdicky") {
+					mainGame->gBot.aiDeckSelect->setVisible(true);
+					mainGame->gBot.aiDeckSelect->setEnabled(true);
+					mainGame->gBot.aiDeckSelect2->setVisible(true);
+					mainGame->gBot.aiDeckSelect2->setEnabled(true);
+				} else {
+					mainGame->gBot.aiDeckSelect->setVisible(false);
+					mainGame->gBot.aiDeckSelect->setEnabled(false);
+					mainGame->gBot.aiDeckSelect2->setVisible(false);
+					mainGame->gBot.aiDeckSelect2->setEnabled(false);
+				}
+				if (bot.deck == L"AI_perfectdicky" || bot.deck == L"AI_Numeron" || bot.deck == L"AI_Hope" || bot.deck == L"MokeyMokeyKing") {
+					mainGame->gBot.chkSeed->setVisible(true);
+					mainGame->gBot.chkSeed->setEnabled(true);
+				} else {
+					mainGame->gBot.chkSeed->setVisible(false);
+					mainGame->gBot.chkSeed->setEnabled(false);
+					mainGame->gBot.chkSeed->setSelected(0);
+					gGameConfig->botSeed = 0;
+				}
+				///////kdiy//////////
 				mainGame->gBot.UpdateEngine();
 				break;
 			}
@@ -1044,6 +1831,75 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				mainGame->gBot.UpdateDescription();
 				break;
 			}
+			///////kdiy//////////
+            case COMBOBOX_CHARACTER: {
+#ifndef VIP
+				break;
+#endif
+				bool filechk = mainGame->chantcheck();
+				if(!filechk)
+				    break;
+                auto elem = static_cast<irr::gui::IGUIComboBox*>(event.GUIEvent.Caller);
+				for(int i = 0; i < 6; ++i) {
+                    if(elem == mainGame->ebCharacter[i]) {
+                        int sel = mainGame->ebCharacter[i]->getSelected();
+                        mainGame->charactcomboselect(i, 1, sel);
+                    }
+                    if(elem == mainGame->ebCharacter_replay[i]) {
+                        int sel = mainGame->ebCharacter_replay[i]->getSelected();
+                        mainGame->charactcomboselect(i, 2, sel);
+                    }
+                }
+
+				int player = gSoundManager->character[mainGame->choose_player];
+				if(player > 0 && gSoundManager->textcharacter[player-1].size() > 2) {
+					mainGame->btnsubCharacterSelect[0]->setVisible(true);
+					mainGame->btnsubCharacterSelect_replay[0]->setVisible(true);
+					for(int i = 2; i < 6; i++) {
+						if(gSoundManager->textcharacter[player-1].size() > i) {
+							mainGame->btnsubCharacterSelect[i-1]->setVisible(true);
+							mainGame->btnsubCharacterSelect_replay[i-1]->setVisible(true);
+						} else {
+							mainGame->btnsubCharacterSelect[i-1]->setVisible(false);
+							mainGame->btnsubCharacterSelect_replay[i-1]->setVisible(false);
+						}
+					}
+				} else {
+					for(int i = 0; i < 5; i++) {
+						mainGame->btnsubCharacterSelect[i]->setVisible(false);
+						mainGame->btnsubCharacterSelect_replay[i]->setVisible(false);
+					}
+				}
+				break;
+			}
+			case COMBOBOX_PICS: {
+				int prevsel = gGameConfig->hdpic;
+				gGameConfig->hdpic = mainGame->cbpics->getSelected();
+				//mainGame->device->closeDevice();
+				int sel = mainGame->cbpics->getSelected();
+				if(sel > 0 && prevsel == 0) {
+				    try {
+						gGameConfig->dpi_scale = static_cast<uint32_t>(std::stol(mainGame->gSettings.ebDpiScale->getText())) / 100.0;
+						mainGame->restart = true;
+					} catch(...){}
+				}
+				break;
+			}
+			case COMBOBOX_aiDeck2: {
+				int sel = mainGame->gBot.aiDeckSelect->getSelected();
+				int sel2 = mainGame->gBot.aiDeckSelect2->getSelected();
+				if(sel2 >= 0)
+				    mainGame->RefreshDeck(mainGame->gBot.aiDeckSelect);
+				break;
+			}
+			case COMBOBOX_cbDeckSelect: {
+				int sel = mainGame->cbDeckSelect->getSelected();
+				int sel2 = mainGame->cbDeck2Select->getSelected();
+				if(sel2 >= 0)
+				    mainGame->RefreshDeck(mainGame->cbDeckSelect);
+				break;
+			}
+            ///////kdiy//////////
 			case SERVER_CHOICE: {
 				ServerLobby::RefreshRooms();
 				return false;
@@ -1112,11 +1968,23 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 					auto extension = Utils::GetFileExtension(to_open_file);
 					bool isMenu = !mainGame->wSinglePlay->isVisible() && !mainGame->wReplay->isVisible();
 					if(extension == L"ydk" && isMenu && mainGame->deckBuilder.SetCurrentDeckFromFile(Utils::ToPathString(to_open_file))) {
-						mainGame->RefreshDeck(mainGame->cbDBDecks);
+						//////kdiy/////
+						//mainGame->RefreshDeck(mainGame->cbDBDecks);
+						mainGame->RefreshDeck(mainGame->cbDBDecks, true);
+						//////kdiy/////
 						auto name = Utils::GetFileName(to_open_file);
 						mainGame->ebDeckname->setText(name.data());
+						//////kdiy/////
+						mainGame->cbDBDecks2->setSelected(-1);
+                        mainGame->cbDBDecks22->setSelected(-1);
+						//////kdiy/////
 						mainGame->cbDBDecks->setSelected(-1);
 						mainGame->HideElement(mainGame->wMainMenu);
+						//////kdiy/////
+#ifdef EK
+						mainGame->HideElement(mainGame->wQQ);
+#endif
+						//////kdiy/////
 						mainGame->deckBuilder.Initialize();
 						return true;
 					} else if(extension == L"lua" && !mainGame->wReplay->isVisible()) {
