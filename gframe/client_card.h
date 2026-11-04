@@ -41,6 +41,9 @@ public:
 	bool is_sanct = false;
 	bool is_pzone = false;
 	uint32_t piccode = 0;
+	bool is_real = false;
+	uint32_t effcode = 0;
+	uint32_t namecode = 0;
 	uint64_t rsetnames = 0;
 	uint32_t rtype = 0;
 	int32_t rlevel = 0;
