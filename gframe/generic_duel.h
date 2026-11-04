@@ -20,7 +20,11 @@ public:
 	void LeaveGame(DuelPlayer* dp) override;
 	void ToDuelist(DuelPlayer* dp) override;
 	void ToObserver(DuelPlayer* dp) override;
-	void PlayerReady(DuelPlayer* dp, bool ready) override;
+	/////kdiy//////////
+	//void PlayerReady(DuelPlayer* dp, bool ready) override;
+	void PlayerReady(DuelPlayer* dp, bool ready, bool ai=false) override;
+	void ModeStartDuel(DuelPlayer* dp) override;
+	/////kdiy/////
 	void PlayerKick(DuelPlayer* dp, uint8_t pos) override;
 	void UpdateDeck(DuelPlayer* dp, void* pdata, uint32_t len) override;
 	void StartDuel(DuelPlayer* dp) override;
