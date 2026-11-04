@@ -68,6 +68,103 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 		switch(event.GUIEvent.EventType) {
 		case irr::gui::EGET_BUTTON_CLICKED: {
 			switch(id) {
+			///////kdiy///////
+			case BUTTON_CARDINFO: {
+				auto elem = static_cast<irr::gui::IGUIButton*>(event.GUIEvent.Caller);
+				for (int i = 0; i < 8; i++) {
+					if(elem == mainGame->CardInfo[i]) {
+						mainGame->stText->setText(mainGame->effectText[i].data());
+						break;
+					}
+				}
+				break;
+			}
+			case BUTTON_AVATAR_CARD0: {
+				mainGame->cardbutton[0]->setPressed();
+				mainGame->cardbutton[1]->setPressed(false);
+				mainGame->cardbutton[2]->setPressed(false);
+                mainGame->cardbutton[0]->setImage(mainGame->imageManager.cardchant0);
+				mainGame->cardbutton[1]->setImage(mainGame->imageManager.cardchant01);
+				mainGame->cardbutton[2]->setImage(mainGame->imageManager.cardchant02);
+				break;
+			}
+			case BUTTON_AVATAR_CARD1: {
+				mainGame->cardbutton[0]->setPressed(false);
+				mainGame->cardbutton[1]->setPressed();
+				mainGame->cardbutton[2]->setPressed(false);
+                mainGame->cardbutton[0]->setImage(mainGame->imageManager.cardchant00);
+				mainGame->cardbutton[1]->setImage(mainGame->imageManager.cardchant1);
+				mainGame->cardbutton[2]->setImage(mainGame->imageManager.cardchant02);
+				break;
+			}
+			case BUTTON_AVATAR_CARD2: {
+				mainGame->cardbutton[0]->setPressed(false);
+				mainGame->cardbutton[1]->setPressed(false);
+				mainGame->cardbutton[2]->setPressed();
+                mainGame->cardbutton[0]->setImage(mainGame->imageManager.cardchant00);
+				mainGame->cardbutton[1]->setImage(mainGame->imageManager.cardchant01);
+				mainGame->cardbutton[2]->setImage(mainGame->imageManager.cardchant2);
+				break;
+			}
+			case BUTTON_PLAY_CARD: {
+				auto pointer = gDataManager->GetCardData(mainGame->showingcard);
+				if(!pointer) {
+					pointer = gDataManager->GetCardData(mainGame->showingcardalias);
+					if(!pointer) break;
+				}
+				uint16_t extra = 0;
+				uint32_t type = pointer->type;
+           		if(type & TYPE_MONSTER) {
+                	if(mainGame->cardbutton[0]->isPressed()) {
+                    	if(type & TYPE_PENDULUM) extra |= 0x20;
+                    	if(type & TYPE_LINK) extra |= 0x8;
+                    	if(type & TYPE_XYZ) extra |= 0x4;
+                    	if(type & TYPE_SYNCHRO) extra |= 0x2;
+                    	if(type & TYPE_FUSION) extra |= 0x1;
+                    	if(type & TYPE_RITUAL) extra |= 0x10;
+						if(type & SUMMON_TYPE_MAXIMUM) extra |= 0x800;
+						if((pointer->level >= 5) && !(type & (TYPE_PENDULUM | TYPE_LINK | TYPE_XYZ | TYPE_SYNCHRO | TYPE_FUSION | TYPE_RITUAL | TYPE_SPSUMMON))) extra |= 0x400;
+                    	gSoundManager->PlayChant(SoundManager::CHANT::SUMMON, mainGame->showingcard, mainGame->showingcardalias, 0, 0, extra);
+                	} else if(mainGame->cardbutton[1]->isPressed()) {
+                    	extra = 0x1;
+				    	gSoundManager->PlayChant(SoundManager::CHANT::ATTACK, mainGame->showingcard, mainGame->showingcardalias, 0, 0, extra);
+                	} else if(mainGame->cardbutton[2]->isPressed()) {
+                    	extra = 0x801;
+                    	gSoundManager->PlayChant(SoundManager::CHANT::ACTIVATE, mainGame->showingcard, mainGame->showingcardalias, 0, 0, extra);
+                	}
+            	} else {
+                	extra = 0x1;
+                	if(type & TYPE_SPELL) {
+                    	if(!(type & (TYPE_FIELD | TYPE_EQUIP | TYPE_CONTINUOUS | TYPE_RITUAL | TYPE_QUICKPLAY | TYPE_PENDULUM))) extra |= 0x4;
+                    	if(type & TYPE_QUICKPLAY) extra |= 0x8;
+                    	if(type & TYPE_CONTINUOUS) extra |= 0x10;
+                    	if(type & TYPE_EQUIP) extra |= 0x20;
+                    	if(type & TYPE_RITUAL) extra |= 0x40;
+                    	if(type & TYPE_FIELD) extra |= 0x1000;
+                    	if(type & TYPE_ACTION) extra |= 0x4000;
+                	}
+                	if(type & TYPE_TRAP) {
+                    	if(!(type & (TYPE_COUNTER | TYPE_CONTINUOUS))) extra |= 0x80;
+                    	if(type & TYPE_CONTINUOUS) extra |= 0x100;
+                    	if(type & TYPE_COUNTER) extra |= 0x200;
+                	}
+					gSoundManager->PlayChant(SoundManager::CHANT::ACTIVATE, mainGame->showingcard, mainGame->showingcardalias, 0, 0, extra);
+            	}
+				break;
+			}
+			case BUTTON_AVATAR_BORED0: {
+				gSoundManager->PlayChant(SoundManager::CHANT::BORED, 0, 0, 0, mainGame->avataricon1, 0, mainGame->avataricon2);
+				break;
+			}
+			case BUTTON_AVATAR_BORED1: {
+				gSoundManager->PlayChant(SoundManager::CHANT::BORED, 0, 0, 1, mainGame->avataricon2, 0, mainGame->avataricon1);
+				break;
+			}
+			case BUTTON_ENTERTAUNMENT_PLOAT_CLOSE: { //story start after click ok
+				mainGame->mode->NextPlot(); //ploatstep 0->1
+				break;
+			}
+			/////kdiy/////
 			case BUTTON_HAND1:
 			case BUTTON_HAND2:
 			case BUTTON_HAND3: {
@@ -143,6 +240,29 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 				break;
 			}
 			case BUTTON_LEAVE_GAME: {
+			    ////kdiy////////
+				mainGame->StopVideo(true);
+				if(mainGame->isEvent) {
+					mainGame->isEvent = false;
+					mainGame->cv->notify_one();
+					mainGame->chantsound.stop();
+					mainGame->chantmusic.stop();
+				}
+        		mainGame->bodycharacter[0] = 0;
+        		mainGame->bodycharacter[1] = 0;
+				for(int i = 0; i < 3; i++) {
+        			mainGame->cutincharacter[0][i] = 0;
+        			mainGame->cutincharacter[1][i] = 0;
+				}
+        		mainGame->lpcharacter[0] = 0;
+        		mainGame->lpcharacter[1] = 0;
+                gSoundManager->soundcount.clear();
+                mainGame->animecount.clear();
+				if(mainGame->dInfo.isReplay) {
+					ReplayMode::StopReplay();
+					break;
+				}
+                ////kdiy////////
 				if(mainGame->dInfo.isSingleMode) {
 					SingleMode::singleSignal.SetNoWait(true);
 					SingleMode::StopPlay(false);
@@ -166,6 +286,12 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 					mainGame->wInfos->setVisible(false);
 					mainGame->wPhase->setVisible(false);
 					mainGame->btnLeaveGame->setVisible(false);
+					///////kdiy///////
+					for(int i = 0; i < 8; i++)
+					    mainGame->CardInfo[i]->setVisible(false);
+					mainGame->wBtnShowCard->setVisible(false);
+                    mainGame->wLocation->setVisible(false);
+					///////kdiy///////
 					mainGame->btnSpectatorSwap->setVisible(false);
 					mainGame->wChat->setVisible(false);
 					mainGame->btnCreateHost->setEnabled(true);
@@ -193,6 +319,25 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 				break;
 			}
 			case BUTTON_RESTART_SINGLE: {
+                ////kdiy////////
+				mainGame->StopVideo(true);
+				if(mainGame->isEvent) {
+					mainGame->isEvent = false;
+					mainGame->cv->notify_one();
+					mainGame->chantsound.stop();
+					mainGame->chantmusic.stop();
+				}
+        		mainGame->bodycharacter[0] = 0;
+        		mainGame->bodycharacter[1] = 0;
+				for(int i = 0; i < 3; i++) {
+        			mainGame->cutincharacter[0][i] = 0;
+        			mainGame->cutincharacter[1][i] = 0;
+				}
+        		mainGame->lpcharacter[0] = 0;
+        		mainGame->lpcharacter[1] = 0;
+                gSoundManager->soundcount.clear();
+                mainGame->animecount.clear();
+			    ////kdiy////////
 				if(mainGame->dInfo.isSingleMode)
 					SingleMode::Restart();
 				break;
@@ -215,7 +360,10 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 				case MSG_SELECT_YESNO:
 				case MSG_SELECT_EFFECTYN: {
 					if(highlighting_card)
-						highlighting_card->is_highlighting = false;
+					    ////kdiy///////////
+						//highlighting_card->is_highlighting = false;
+						highlighting_card->is_activable = false;
+						////kdiy///////////
 					highlighting_card = 0;
 					DuelClient::SetResponseI(1);
 					mainGame->HideElement(mainGame->wQuery, true);
@@ -253,8 +401,17 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 				case MSG_SELECT_YESNO:
 				case MSG_SELECT_EFFECTYN: {
 					if(highlighting_card)
-						highlighting_card->is_highlighting = false;
+						////kdiy///////////
+						//highlighting_card->is_highlighting = false;
+						highlighting_card->is_activable = false;
+						////kdiy///////////
 					highlighting_card = 0;
+					////kdiy///////////
+        			if(mainGame->dInfo.curMsg == MSG_SELECT_YESNO && reattack && attacker)
+            			attacker->is_attacking = false;
+					if(mainGame->dInfo.curMsg == MSG_SELECT_YESNO && reattack && attack_target)
+						attack_target->is_attacked = false;
+					////kdiy///////////
 					DuelClient::SetResponseI(0);
 					mainGame->HideElement(mainGame->wQuery, true);
 					break;
@@ -637,6 +794,10 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 						while(spsummonable_cards[index] != command_card) index++;
 						DuelClient::SetResponseI((index << 16) + 1);
 						mainGame->HideElement(mainGame->wCardSelect, true);
+                        //////////kdiy/////////
+                        for(int i = 0; i < 5; ++i)
+                            mainGame->selectedcard[i]->setVisible(false);
+                        //////////kdiy/////////
 						ShowCancelOrFinishButton(0);
 						break;
 					}
@@ -664,10 +825,18 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 								DuelClient::SetResponseI(index);
 							}
 							mainGame->HideElement(mainGame->wCardSelect, true);
+                            //////////kdiy/////////
+                            for(int i = 0; i < 5; ++i)
+                                mainGame->selectedcard[i]->setVisible(false);
+                            //////////kdiy/////////
 						} else {
 							mainGame->stOptions->setText(gDataManager->GetDesc(select_options[0], mainGame->dInfo.compat_mode).data());
 							selected_option = 0;
 							mainGame->wCardSelect->setVisible(false);
+                            //////////kdiy/////////
+                            for(int i = 0; i < 5; ++i)
+                                mainGame->selectedcard[i]->setVisible(false);
+                            //////////kdiy/////////
 							ShowSelectOption();
 						}
 						break;
@@ -678,6 +847,9 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 					command_card = selectable_cards[id - BUTTON_CARD_0 + mainGame->scrCardList->getPos() / 10];
 					if (command_card->is_selected) {
 						command_card->is_selected = false;
+                        //////////kdiy/////////
+                        mainGame->selectedcard[id - BUTTON_CARD_0]->setVisible(false);
+                        //////////kdiy/////////
 						auto it = std::find(selected_cards.begin(), selected_cards.end(), command_card);
 						selected_cards.erase(it);
 						if(command_card->controler)
@@ -685,6 +857,9 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 						else mainGame->stCardPos[id - BUTTON_CARD_0]->setBackgroundColor(skin::DUELFIELD_CARD_SELF_WINDOW_BACKGROUND_VAL);
 					} else {
 						command_card->is_selected = true;
+                        //////////kdiy/////////
+                        mainGame->selectedcard[id - BUTTON_CARD_0]->setVisible(true);
+                        //////////kdiy/////////
 						mainGame->stCardPos[id - BUTTON_CARD_0]->setBackgroundColor(skin::DUELFIELD_CARD_SELECTED_WINDOW_BACKGROUND_VAL);
 						selected_cards.push_back(command_card);
 					}
@@ -693,6 +868,10 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 						SetResponseSelectedCards();
 						ShowCancelOrFinishButton(0);
 						mainGame->HideElement(mainGame->wCardSelect, true);
+                        //////////kdiy/////////
+                        for(int i = 0; i < 5; ++i)
+                            mainGame->selectedcard[i]->setVisible(false);
+                        //////////kdiy/////////
 					} else if (sel >= select_min) {
 						select_ready = true;
 						mainGame->btnSelectOK->setVisible(true);
@@ -711,11 +890,17 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 					command_card = selectable_cards[id - BUTTON_CARD_0 + mainGame->scrCardList->getPos() / 10];
 					if (command_card->is_selected) {
 						command_card->is_selected = false;
+                        //////////kdiy/////////
+                        mainGame->selectedcard[id - BUTTON_CARD_0]->setVisible(false);
+                        //////////kdiy/////////
 						if(command_card->controler)
 							mainGame->stCardPos[id - BUTTON_CARD_0]->setBackgroundColor(skin::DUELFIELD_CARD_OPPONENT_WINDOW_BACKGROUND_VAL);
 						else mainGame->stCardPos[id - BUTTON_CARD_0]->setBackgroundColor(skin::DUELFIELD_CARD_SELF_WINDOW_BACKGROUND_VAL);
 					} else {
 						command_card->is_selected = true;
+                        //////////kdiy/////////
+                        mainGame->selectedcard[id - BUTTON_CARD_0]->setVisible(true);
+                        //////////kdiy/////////
 						mainGame->stCardPos[id - BUTTON_CARD_0]->setBackgroundColor(skin::DUELFIELD_CARD_SELECTED_WINDOW_BACKGROUND_VAL);
 					}
 					selected_cards.push_back(command_card);
@@ -723,6 +908,10 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 						SetResponseSelectedCards();
 						ShowCancelOrFinishButton(0);
 						mainGame->HideElement(mainGame->wCardSelect, true);
+                        //////////kdiy/////////
+                        for(int i = 0; i < 5; ++i)
+                            mainGame->selectedcard[i]->setVisible(false);
+                        //////////kdiy/////////
 					}
 					break;
 				}
@@ -732,6 +921,9 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 						break;
 					if (command_card->is_selected) {
 						command_card->is_selected = false;
+                        //////////kdiy/////////
+                        mainGame->selectedcard[id - BUTTON_CARD_0]->setVisible(false);
+                        //////////kdiy/////////
 						auto it = std::find(selected_cards.begin(), selected_cards.end(), command_card);
 						selected_cards.erase(it);
 					} else
@@ -767,6 +959,10 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 								respbuf[i] = sort_list[i] - 1;
 							DuelClient::SetResponseB(respbuf, select_max);
 							mainGame->HideElement(mainGame->wCardSelect, true);
+                            //////////kdiy/////////
+                            for(int i = 0; i < 5; ++i)
+                                mainGame->selectedcard[i]->setVisible(false);
+                            //////////kdiy/////////
 							sort_list.clear();
 						}
 					}
@@ -781,6 +977,10 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 				auto HideCardSelectIfVisible = [](bool setAction = false) {
 					if (mainGame->wCardSelect->isVisible())
 						mainGame->HideElement(mainGame->wCardSelect, setAction);
+                    //////////kdiy/////////
+                    for(int i = 0; i < 5; ++i)
+                        mainGame->selectedcard[i]->setVisible(false);
+                    //////////kdiy/////////
 				};
  				mainGame->stCardListTip->setVisible(false);
 				if(mainGame->dInfo.isReplay) {
@@ -821,7 +1021,10 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 			switch(id) {
 			case CHECK_ATTRIBUTE: {
 				int att = 0, filter = 0x1, count = 0;
-				for(int i = 0; i < 7; ++i, filter <<= 1) {
+				/////zdiy/////
+				//for(int i = 0; i < 7; ++i, filter <<= 1) {
+				for(int i = 0; i < 8; ++i, filter <<= 1) {
+				/////zdiy/////
 					if(mainGame->chkAttribute[i]->isChecked()) {
 						att |= filter;
 						count++;
@@ -841,6 +1044,15 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 						count++;
 					}
 				}
+				/////zdiy/////
+				uint64_t z_filter = 0x10000000000000;
+				for(int i = 25; i < 36;  ++i, z_filter <<= 1) {
+					if(mainGame->chkRace[i]->isChecked()) {
+						rac |= z_filter;
+						count++;
+					}
+				}
+				/////zdiy/////
 				if(count == announce_count) {
 					if(mainGame->dInfo.legacy_race_size)
 						DuelClient::SetResponse<int32_t>(rac);
@@ -897,11 +1109,33 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 					curstring->enableOverrideColor(false);
 					// image
 					if(curcard->code)
-						mainGame->imageLoading[mainGame->btnCardSelect[i]] = curcard->code;
-					else if(conti_selecting)
+					///kdiy////////
+						//mainGame->imageLoading[mainGame->btnCardSelect[i]] = curcard->code;
+					// else if(conti_selecting)
+					// 	mainGame->imageLoading[mainGame->btnCardSelect[i]] = curcard->chain_code;
+					// else
+					// 	mainGame->btnCardSelect[i]->setImage(mainGame->imageManager.tCover[0]);
+					{
+						mainGame->imageLoading[mainGame->btnCardSelect[i]] = curcard->piccode > 0 ? curcard->piccode : curcard->code;
+						mainGame->DrawRealCard(curcard, mainGame->btnCardSelect2[i]);
+					}
+					else if(conti_selecting) {
 						mainGame->imageLoading[mainGame->btnCardSelect[i]] = curcard->chain_code;
-					else
+						mainGame->DrawRealCard(curcard, mainGame->btnCardSelect2[i]);
+					} else {
 						mainGame->btnCardSelect[i]->setImage(mainGame->imageManager.tCover[0]);
+						mainGame->btnCardSelect2[i][0]->setImage(0);
+						mainGame->btnCardSelect2[i][1]->setImage(0);
+						mainGame->btnCardSelect2[i][2]->setImage(0);
+						mainGame->btnCardSelect2[i][3]->setImage(0);
+						mainGame->btnCardSelect2[i][4]->setImage(0);
+					}
+					mainGame->btnCardSelect2[i][0]->setRelativePosition(mainGame->Scale(30 + i * 125, 55, 30 + 120 + i * 125, 225));
+					mainGame->btnCardSelect2[i][1]->setRelativePosition(mainGame->Scale(30 + i * 125, 55, 30 + 120 + i * 125, 225));
+					mainGame->btnCardSelect2[i][2]->setRelativePosition(mainGame->Scale(30 + i * 125, 55, 30 + 120 + i * 125, 225));
+					mainGame->btnCardSelect2[i][3]->setRelativePosition(mainGame->Scale(30 + i * 125, 55, 30 + 120 + i * 125, 225));
+					mainGame->btnCardSelect2[i][4]->setRelativePosition(mainGame->Scale(30 + i * 125, 55, 30 + 120 + i * 125, 225));
+					///kdiy////////
 					mainGame->btnCardSelect[i]->setRelativePosition(mainGame->Scale(30 + i * 125, 55, 30 + 120 + i * 125, 225));
 					// text
 					std::wstring text = L"";
@@ -920,6 +1154,12 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 						}
 					}
 					curstring->setText(text.data());
+                    //////////kdiy/////////
+					if(curcard->is_selected)
+                        mainGame->selectedcard[i]->setVisible(true);
+                    else
+                        mainGame->selectedcard[i]->setVisible(false);
+                    //////////kdiy/////////
 					// color
 					if(conti_selecting)
 						curstring->setBackgroundColor(skin::DUELFIELD_CARD_SELF_WINDOW_BACKGROUND_VAL);
@@ -959,10 +1199,28 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 					auto& curstring = mainGame->stDisplayPos[i];
 					// draw display_cards[i + pos] in btnCardDisplay[i]
 					curstring->enableOverrideColor(false);
-					if(curcard->code)
-						mainGame->imageLoading[mainGame->btnCardDisplay[i]] = curcard->code;
-					else
+					if (curcard->code)
+						///kdiy////////
+							//mainGame->imageLoading[mainGame->btnCardDisplay[i]] = curcard->code;
+						// else
+						// 	mainGame->btnCardDisplay[i]->setImage(mainGame->imageManager.tCover[0]);
+					{
+						mainGame->imageLoading[mainGame->btnCardDisplay[i]] = curcard->piccode > 0 ? curcard->piccode : curcard->code;
+						mainGame->DrawRealCard(curcard, mainGame->btnCardDisplay2[i]);
+					} else {
 						mainGame->btnCardDisplay[i]->setImage(mainGame->imageManager.tCover[0]);
+						mainGame->btnCardDisplay2[i][0]->setImage(0);
+						mainGame->btnCardDisplay2[i][1]->setImage(0);
+						mainGame->btnCardDisplay2[i][2]->setImage(0);
+						mainGame->btnCardDisplay2[i][3]->setImage(0);
+						mainGame->btnCardDisplay2[i][4]->setImage(0);
+					}
+					mainGame->btnCardDisplay2[i][0]->setRelativePosition(mainGame->Scale(30 + i * 125, 55, 30 + 120 + i * 125, 225));
+					mainGame->btnCardDisplay2[i][1]->setRelativePosition(mainGame->Scale(30 + i * 125, 55, 30 + 120 + i * 125, 225));
+					mainGame->btnCardDisplay2[i][2]->setRelativePosition(mainGame->Scale(30 + i * 125, 55, 30 + 120 + i * 125, 225));
+					mainGame->btnCardDisplay2[i][3]->setRelativePosition(mainGame->Scale(30 + i * 125, 55, 30 + 120 + i * 125, 225));
+					mainGame->btnCardDisplay2[i][4]->setRelativePosition(mainGame->Scale(30 + i * 125, 55, 30 + 120 + i * 125, 225));
+					///kdiy////////
 					mainGame->btnCardDisplay[i]->setRelativePosition(mainGame->Scale(30 + i * 125, 55, 30 + 120 + i * 125, 225));
 					std::wstring text;
 					if(curcard->location == LOCATION_OVERLAY) {
@@ -1030,7 +1288,10 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 					SetShowMark(mcard, true);
 					ShowCardInfoInList(mcard, mainGame->btnCardSelect[id - BUTTON_CARD_0], mainGame->wCardSelect);
 					if(mcard->code) {
-						mainGame->ShowCardInfo(mcard->code);
+                        ///////kdiy/////////
+						//mainGame->ShowCardInfo(mcard->code);
+                        mainGame->ShowCardInfo(mcard->code, false, imgType::ART, mcard);
+                        ///////kdiy/////////
 					} else {
 						if(mcard->cover)
 							mainGame->ShowCardInfo(mcard->cover, false, imgType::COVER);
@@ -1046,7 +1307,10 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 					SetShowMark(mcard, true);
 					ShowCardInfoInList(mcard, mainGame->btnCardDisplay[id - BUTTON_DISPLAY_0], mainGame->wCardDisplay);
 					if(mcard->code) {
-						mainGame->ShowCardInfo(mcard->code);
+						///////kdiy/////////
+						//mainGame->ShowCardInfo(mcard->code);
+                        mainGame->ShowCardInfo(mcard->code, false, imgType::ART, mcard);
+                        ///////kdiy/////////
 					} else {
 						if(mcard->cover)
 							mainGame->ShowCardInfo(mcard->cover, false, imgType::COVER);
@@ -1094,6 +1358,25 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 		}();
 		switch(event.MouseInput.Event) {
 		case irr::EMIE_LMOUSE_DOUBLE_CLICK: {
+			/////kdiy/////
+			if(mainGame->isEvent) {
+				mainGame->isEvent = false;
+				mainGame->cv->notify_one();
+				mainGame->chantsound.stop();
+				mainGame->chantmusic.stop();
+			}
+			if(mainGame->isAnime && mainGame->videostart) {
+				mainGame->StopVideo(true);
+			    break;
+			}
+			if(mainGame->mode->isMode && mainGame->mode->isPlot) {
+				if(mainGame->mode->plotStep < 1) break;
+                if(!mainGame->dInfo.isStarted)
+				    mainGame->mode->isStartDuel = true;
+				mainGame->mode->NextPlot(2); //skip continuous ploat
+				break;
+			}
+			/////kdiy/////
 			if(mainGame->dInfo.isReplay)
 				break;
 			if(mainGame->dInfo.player_type == 7)
@@ -1118,6 +1401,19 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 			break;
 		}
 		case irr::EMIE_LMOUSE_LEFT_UP: {
+			/////kdiy/////
+			if(mainGame->mode->isMode && mainGame->mode->isPlot){
+				if(mainGame->mode->plotStep < 1) break;
+                if(mainGame->dInfo.isStarted) {
+					mainGame->isEvent = false;
+                    mainGame->cv->notify_one();
+					mainGame->chantsound.stop();
+					mainGame->chantmusic.stop();
+                } else if(!(mainGame->dInfo.isStarted && mainGame->mode->isStartEvent))
+                    mainGame->mode->NextPlot();
+				break;
+			}
+			/////kdiy/////
 			if(!mainGame->dInfo.isInDuel)
 				break;
 			hovered_location = 0;
@@ -1162,6 +1458,16 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 					mainGame->wCardSelect->setText(epro::format(L"{}({})", gDataManager->GetSysString(1007), clicked_card->overlayed.size()).data());
 					break;
 				}
+				//////kdiy///////////
+				case LOCATION_SZONE: {
+					if(!clicked_card || clicked_card->overlayed.size() == 0)
+						break;
+					for(auto& pcard : clicked_card->overlayed)
+						selectable_cards.push_back(pcard);
+					mainGame->wCardSelect->setText(epro::format(L"{}({})", gDataManager->GetSysString(1008), clicked_card->overlayed.size()).c_str());
+					break;
+				}
+				//////kdiy///////////
 				case LOCATION_GRAVE: {
 					if(grave[hovered_controler].size() == 0)
 						break;
@@ -1204,6 +1510,16 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 					mainGame->wCardSelect->setText(epro::format(L"{}({})", gDataManager->GetSysString(1007), clicked_card->overlayed.size()).data());
 					break;
 				}
+				////////kdiy/////////////
+				case LOCATION_SZONE: {
+					if(!clicked_card || clicked_card->overlayed.size() == 0)
+						break;
+					for(int32_t i = 0; i < (int32_t)clicked_card->overlayed.size(); ++i)
+						selectable_cards.push_back(clicked_card->overlayed[i]);
+					mainGame->wCardSelect->setText(epro::format(L"{}({})", gDataManager->GetSysString(1008), clicked_card->overlayed.size()).c_str());
+					break;
+				}
+				////////kdiy/////////////
 				case LOCATION_GRAVE: {
 					if(grave[hovered_controler].size() == 0)
 						break;
@@ -1499,6 +1815,10 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 		case irr::EMIE_RMOUSE_LEFT_UP: {
 			if(mainGame->dInfo.isReplay)
 				break;
+			/////kdiy/////
+			if(mainGame->mode->isMode && mainGame->mode->isPlot)
+				break;
+			/////kdiy/////
 			auto x = event.MouseInput.X;
 			auto y = event.MouseInput.Y;
 			irr::core::vector2di pos(x, y);
@@ -1517,6 +1837,10 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 		case irr::EMIE_MOUSE_MOVED: {
 			if(!mainGame->dInfo.isInDuel)
 				break;
+			/////kdiy/////
+			if(mainGame->mode->isMode && mainGame->mode->isPlot)
+			    break;
+			/////kdiy/////
 			bool should_show_tip = false;
 			irr::core::vector2di pos = mainGame->Resize(event.MouseInput.X, event.MouseInput.Y, true);
 			irr::core::vector2di mousepos(event.MouseInput.X, event.MouseInput.Y);
@@ -1524,6 +1848,9 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 			irr::s32 y = pos.Y;
 			if(x < 300) {
 				mainGame->stTip->setVisible(should_show_tip);
+				/////kdiy/////
+				if(x < 160)
+				/////kdiy/////
 				break;
 			}
 			hovered_location = 0;
@@ -1552,9 +1879,15 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 				} else {
 					const auto& self = mainGame->dInfo.isTeam1 ? mainGame->dInfo.selfnames : mainGame->dInfo.opponames;
 					const auto& oppo = mainGame->dInfo.isTeam1 ? mainGame->dInfo.opponames : mainGame->dInfo.selfnames;
-					if(mainGame->Resize(327, 8, 630, 51 + static_cast<irr::s32>(23 * (self.size() - 1))).isPointInside(mousepos))
+					/////kdiy/////////
+					//if(mainGame->Resize(327, 8, 630, 51 + static_cast<irr::s32>(23 * (self.size() - 1))).isPointInside(mousepos))
+					if(mainGame->Resize(161, 553, 350, 640 + static_cast<irr::s32>(23 * (self.size() - 1))).isPointInside(mousepos))
+					/////kdiy/////////
 						mplayer = 0;
-					else if(mainGame->Resize(689, 8, 991, 51 + static_cast<irr::s32>(23 * (oppo.size() - 1))).isPointInside(mousepos))
+					/////kdiy/////////
+					//else if(mainGame->Resize(689, 8, 991, 51 + static_cast<irr::s32>(23 * (oppo.size() - 1))).isPointInside(mousepos))
+					else if(mainGame->Resize(691, 48, 900, 135 + static_cast<irr::s32>(23 * (oppo.size() - 1))).isPointInside(mousepos))
+					/////kdiy/////////
 						mplayer = 1;
 				}
 			}
@@ -1590,24 +1923,52 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 					}
 					SetShowMark(mcard, true);
 					if(mcard->code) {
-						mainGame->ShowCardInfo(mcard->code);
+						///////kdiy/////////
+						//mainGame->ShowCardInfo(mcard->code);
+						mainGame->ShowCardInfo(mcard->code, false, imgType::ART, mcard);
+                    	///////kdiy/////////
 						if(mcard->location & (LOCATION_HAND | LOCATION_MZONE | LOCATION_SZONE | LOCATION_SKILL)) {
-							std::wstring str(gDataManager->GetName(mcard->code));
-							if(mcard->alias != 0 && !CardDataC::IsInArtworkOffsetRange(mcard) && str != gDataManager->GetName(mcard->alias)) {
+							///////kdiy/////////
+							//std::wstring str(gDataManager->GetName(mcard->code));
+							//if(mcard->alias != 0 && !CardDataC::IsInArtworkOffsetRange(mcard) && str != gDataManager->GetName(mcard->alias)) {
+								//str.append(epro::format(L"\n({})", gDataManager->GetName(mcard->alias)));
+							std::wstring str(gDataManager->GetName(mcard));
+							if((mcard->alias != 0 && (mcard->is_real || !CardDataC::IsInArtworkOffsetRange(mcard)) && gDataManager->GetName(mcard, true).substr(0,gDataManager->GetName(mcard->alias, true).length()) != gDataManager->GetName(mcard->alias, true))) {
 								str.append(epro::format(L"\n({})", gDataManager->GetName(mcard->alias)));
+							///////kdiy/////////
 							}
 							if(mcard->type & TYPE_MONSTER) {
-								if (mcard->type & TYPE_LINK) {
-									str.append(epro::format(L"\n{}/Link {}\n{}/{}", mcard->atkstring, mcard->link, gDataManager->FormatRace(mcard->race),
-										gDataManager->FormatAttribute(mcard->attribute)));
-								} else {
+								//////kdiy/////
+								//if (mcard->type & TYPE_LINK) {
+								// 	str.append(epro::format(L"\n{}/Link {}\n{}/{}", mcard->atkstring, mcard->link, gDataManager->FormatRace(mcard->race),
+								// 		gDataManager->FormatAttribute(mcard->attribute)));
+								// } else {
+								// 	str.append(epro::format(L"\n{}/{}", mcard->atkstring, mcard->defstring));
+								// 	if(mcard->rank && mcard->level)
+								// 	    str.append(epro::format(L"\n\u2606{}/\u2605{} {}/{}", mcard->level, mcard->rank, gDataManager->FormatRace(mcard->race), gDataManager->FormatAttribute(mcard->attribute)));
+								// 	else {
+								// 		str.append(epro::format(L"\n{}{} {}/{}", (mcard->level ? L"\u2605" : L"\u2606"), (mcard->level ? mcard->level : mcard->rank), gDataManager->FormatRace(mcard->race), gDataManager->FormatAttribute(mcard->attribute)));
+								// 	}
+								//has lv, rk, lk
+								if ((mcard->level != 0 || (mcard->type & (TYPE_FUSION | TYPE_SYNCHRO | TYPE_RITUAL))) && (mcard->rank != 0 || (mcard->type & TYPE_XYZ)) && (mcard->link != 0 || (mcard->type & TYPE_LINK))) {
+									str.append(epro::format(L"\n\u2605{}/\u2606{} {}/{}", mcard->level, mcard->rank, gDataManager->FormatRace(mcard->race), gDataManager->FormatAttribute(mcard->attribute)));
+									str.append(epro::format(L"\n{}/Link {}", mcard->atkstring, mcard->link));
+								//has lk, rk/lv
+								} else if ((mcard->link != 0 || (mcard->type & TYPE_LINK)) && ((mcard->rank != 0 || (mcard->type & TYPE_XYZ)) || (mcard->level != 0 || (mcard->type & (TYPE_FUSION | TYPE_SYNCHRO | TYPE_RITUAL))))) {
+									str.append(epro::format(L"\n{}{} {}/{}", (mcard->type & TYPE_XYZ) ? L"\u2606" : L"\u2605", (mcard->type & TYPE_XYZ) ? mcard->rank : mcard->level, gDataManager->FormatRace(mcard->race), gDataManager->FormatAttribute(mcard->attribute)));
+									str.append(epro::format(L"\n{}/Link {}", mcard->atkstring, mcard->link));
+								//has lv, rk
+								} else if ((mcard->level != 0 || (mcard->type & (TYPE_FUSION | TYPE_SYNCHRO | TYPE_RITUAL))) && (mcard->rank != 0 || (mcard->type & TYPE_XYZ))) {
+									str.append(epro::format(L"\n\u2605{}/\u2606{} {}/{}", mcard->level, mcard->rank, gDataManager->FormatRace(mcard->race), gDataManager->FormatAttribute(mcard->attribute)));
 									str.append(epro::format(L"\n{}/{}", mcard->atkstring, mcard->defstring));
-									if(mcard->rank && mcard->level)
-										str.append(epro::format(L"\n\u2606{}/\u2605{} {}/{}", mcard->level, mcard->rank, gDataManager->FormatRace(mcard->race), gDataManager->FormatAttribute(mcard->attribute)));
-									else {
-										str.append(epro::format(L"\n{}{} {}/{}", (mcard->level ? L"\u2605" : L"\u2606"), (mcard->level ? mcard->level : mcard->rank), gDataManager->FormatRace(mcard->race), gDataManager->FormatAttribute(mcard->attribute)));
-									}
-								}
+								//has rk/lv
+								} else if ((mcard->rank != 0 || (mcard->type & TYPE_XYZ)) || (mcard->level != 0 || !(mcard->type & (TYPE_XYZ | TYPE_LINK)))) {
+									str.append(epro::format(L"\n{}{} {}/{}", (mcard->type & TYPE_XYZ)  ? L"\u2606" : L"\u2605", (mcard->type & TYPE_XYZ) ? mcard->rank : mcard->level, gDataManager->FormatRace(mcard->race), gDataManager->FormatAttribute(mcard->attribute)));
+									str.append(epro::format(L"\n{}/{}", mcard->atkstring, mcard->defstring));
+								//has lk
+								} else if (mcard->link != 0 || (mcard->type & TYPE_LINK))
+								    str.append(epro::format(L"\n{}/Link {}\n{}/{}", mcard->atkstring, mcard->link, gDataManager->FormatRace(mcard->race), gDataManager->FormatAttribute(mcard->attribute)));
+								///////kdiy/////////
 							}
 							if((mcard->location & (LOCATION_HAND | LOCATION_SZONE)) != 0 && (mcard->type & TYPE_PENDULUM)) {
 								str.append(epro::format(L"\n{}/{}", mcard->lscale, mcard->rscale));
@@ -1621,7 +1982,7 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 								else if(mcard->cHint == CHINT_CARD)
 									str.append(epro::format(L"\n{}{}", gDataManager->GetSysString(212), gDataManager->GetName(mcard->chValue)));
 								else if(mcard->cHint == CHINT_RACE)
-									str.append(epro::format(L"\n{}{}", gDataManager->GetSysString(213), gDataManager->FormatRace(mcard->chValue)));
+								    str.append(epro::format(L"\n{}{}", gDataManager->GetSysString(213), gDataManager->FormatRace(mcard->chValue)));
 								else if(mcard->cHint == CHINT_ATTRIBUTE)
 									str.append(epro::format(L"\n{}{}", gDataManager->GetSysString(214), gDataManager->FormatAttribute(mcard->chValue)));
 								else if(mcard->cHint == CHINT_NUMBER)
@@ -1647,20 +2008,23 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 			}
 			if(mplayer != hovered_player) {
 				if(mplayer < 2) {
-					std::wstring player_name;
-					auto& self = mainGame->dInfo.isTeam1 ? mainGame->dInfo.selfnames : mainGame->dInfo.opponames;
-					auto& oppo = mainGame->dInfo.isTeam1 ? mainGame->dInfo.opponames : mainGame->dInfo.selfnames;
-					if (mplayer == 0)
-						player_name = self[mainGame->dInfo.current_player[mplayer]];
-					else
-						player_name = oppo[mainGame->dInfo.current_player[mplayer]];
-					for(const auto& hint : player_desc_hints[mplayer]) {
-						player_name.append(epro::format(L"\n*{}", gDataManager->GetDesc(hint.first, mainGame->dInfo.compat_mode)));
-					}
-					should_show_tip = true;
-					auto dtip = mainGame->textFont->getDimensionustring(player_name) + mainGame->Scale(irr::core::dimension2d<uint32_t>(10, 10));
-					mainGame->stTip->setRelativePosition(irr::core::recti(mousepos.X - mainGame->Scale(10) - dtip.Width, mousepos.Y + mainGame->Scale(10), mousepos.X - mainGame->Scale(10), mousepos.Y + mainGame->Scale(10) + dtip.Height));
-					mainGame->stTip->setText(player_name.data());
+					/////kdiy/////
+					// std::wstring player_name;
+					// auto& self = mainGame->dInfo.isTeam1 ? mainGame->dInfo.selfnames : mainGame->dInfo.opponames;
+					// auto& oppo = mainGame->dInfo.isTeam1 ? mainGame->dInfo.opponames : mainGame->dInfo.selfnames;
+					// if (mplayer == 0)
+					// 	player_name = self[mainGame->dInfo.current_player[mplayer]];
+					// else
+					// 	player_name = oppo[mainGame->dInfo.current_player[mplayer]];
+					// for(const auto& hint : player_desc_hints[mplayer]) {
+					// 	player_name.append(epro::format(L"\n*{}", gDataManager->GetDesc(hint.first, mainGame->dInfo.compat_mode)));
+					// }
+					// should_show_tip = true;
+					// auto dtip = mainGame->textFont->getDimensionustring(player_name) + mainGame->Scale(irr::core::dimension2d<uint32_t>(10, 10));
+					// mainGame->stTip->setRelativePosition(irr::core::recti(mousepos.X - mainGame->Scale(10) - dtip.Width, mousepos.Y + mainGame->Scale(10), mousepos.X - mainGame->Scale(10), mousepos.Y + mainGame->Scale(10) + dtip.Height));
+					// mainGame->stTip->setText(player_name.data());
+					mainGame->ShowPlayerInfo(mplayer);
+					/////kdiy/////
 				}
 				hovered_player = mplayer;
 			}
@@ -1673,6 +2037,10 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 		case irr::EMIE_LMOUSE_PRESSED_DOWN: {
 			if(!mainGame->dInfo.isInDuel || !isroot || event.MouseInput.X <= 300)
 				break;
+			/////kdiy/////
+			if(mainGame->mode->isMode && mainGame->mode->isPlot)
+				break;
+			/////kdiy/////
 			mainGame->always_chain = true;
 			mainGame->ignore_chain = false;
 			mainGame->chain_when_avail = false;
@@ -1682,6 +2050,10 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 		case irr::EMIE_RMOUSE_PRESSED_DOWN: {
 			if(!mainGame->dInfo.isInDuel || !isroot || event.MouseInput.X <= 300)
 				break;
+			/////kdiy/////
+			if(mainGame->mode->isMode && mainGame->mode->isPlot)
+				break;
+			/////kdiy/////
 			mainGame->ignore_chain = true;
 			mainGame->always_chain = false;
 			mainGame->chain_when_avail = false;
@@ -1875,9 +2247,177 @@ bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation)
 				mainGame->env->setFocus(mainGame->gSettings.window);
 				break;
 			}
+			//////kdiy///////
+			case BUTTON_SHOW_CARD: {
+				if(!mainGame->wCardImg->isVisible())
+					mainGame->wCardImg->setVisible(true);
+                else
+					mainGame->HideElement(mainGame->wCardImg);
+				break;
+			}
+			case BUTTON_CHATLOG: {
+				if (!mainGame->wInfos->isVisible()) {
+					mainGame->wInfos->setVisible(true);
+					mainGame->env->getRootGUIElement()->bringToFront(mainGame->wInfos);
+				} else
+					mainGame->HideElement(mainGame->wInfos);
+				break;
+			}
+			case BUTTON_CARDLOC: {
+				if(!mainGame->wLocation->isVisible()) {
+					mainGame->wLocation->setVisible(true);
+					mainGame->HideElement(mainGame->wCardImg);
+					mainGame->HideElement(mainGame->wInfos);
+                    for(int i = 0; i < 8; i++)
+                        mainGame->CardInfo[i]->setVisible(false);
+				} else
+					mainGame->HideElement(mainGame->wLocation);
+				break;
+			}
+			case BUTTON_LOCATION_0: {
+				mainGame->btnLocation[0]->setPressed();
+				for(int i = 1; i < 6; ++i)
+					mainGame->btnLocation[i]->setPressed(false);
+				break;
+			}
+			case BUTTON_LOCATION_1: {
+				mainGame->btnLocation[1]->setPressed();
+				for(int i = 0; i < 6; ++i) {
+					if(i == 1) continue;
+					mainGame->btnLocation[i]->setPressed(false);
+				}
+				break;
+			}
+			case BUTTON_LOCATION_2: {
+				mainGame->btnLocation[2]->setPressed();
+				for(int i = 0; i < 6; ++i) {
+					if(i == 2) continue;
+					mainGame->btnLocation[i]->setPressed(false);
+				}
+				break;
+			}
+			case BUTTON_LOCATION_3: {
+				mainGame->btnLocation[3]->setPressed();
+				for(int i = 0; i < 6; ++i) {
+					if(i == 3) continue;
+					mainGame->btnLocation[i]->setPressed(false);
+				}
+				break;
+			}
+			case BUTTON_LOCATION_4: {
+				mainGame->btnLocation[4]->setPressed();
+				for(int i = 0; i < 6; ++i) {
+					if(i == 4) continue;
+					mainGame->btnLocation[i]->setPressed(false);
+				}
+				break;
+			}
+			case BUTTON_LOCATION_5: {
+				mainGame->btnLocation[5]->setPressed();
+				for(int i = 0; i < 6; ++i) {
+					if(i == 5) continue;
+					mainGame->btnLocation[i]->setPressed(false);
+				}
+				break;
+			}
+			case BUTTON_HOME: {
+                Utils::SystemOpen(EPRO_TEXT("https://afdian.com/a/Edokcg/"), Utils::OPEN_URL);
+				break;
+			}
+			case BUTTON_FOLDER: {
+                Utils::SystemOpen(EPRO_TEXT("https://afdian.com/p/4a2966dcbb0d11edaaa052540025c377/"), Utils::OPEN_URL);
+				break;
+			}
+			case BUTTON_PICDL: {
+                Utils::SystemOpen(EPRO_TEXT("https://afdian.com/p/350597f2a3e711efb15f52540025c377/"), Utils::OPEN_URL);
+				break;
+			}
+			case BUTTON_MOVIEDL: {
+                Utils::SystemOpen(EPRO_TEXT("https://afdian.com/p/8c3fb8e8a3df11efba4752540025c377/"), Utils::OPEN_URL);
+				break;
+			}
+            case BUTTON_SOUNDDL: {
+                Utils::SystemOpen(EPRO_TEXT("https://afdian.com/p/ad6b923aa3df11ef9a3b5254001e7c00/"), Utils::OPEN_URL);
+				break;
+			}
+			case BUTTON_INTRO: {
+                Utils::SystemOpen(EPRO_TEXT("https://www.bilibili.com/read/cv8171279/"), Utils::OPEN_URL);
+				break;
+			}
+			case BUTTON_TUT: {
+                Utils::SystemOpen(EPRO_TEXT("https://www.bilibili.com/video/BV1Ey4y1q7pr/"), Utils::OPEN_URL);
+				break;
+			}
+			case BUTTON_TUT2: {
+                Utils::SystemOpen(EPRO_TEXT("https://www.bilibili.com/video/BV1a54y127Xx?p=2"), Utils::OPEN_URL);
+				break;
+			}
+			case BUTTON_TEXTURE: {
+				break;
+			}
+			case BUTTON_TEXTURE_SELECT2: {
+				if(mainGame->gSettings.clickedindex < 0) break;
+				int selected = mainGame->gSettings.cbName_texture[mainGame->gSettings.clickedindex]->getSelected();
+				if(mainGame->gSettings.cbName_texture[mainGame->gSettings.clickedindex]->getItemCount() < 2) break;
+				if(selected >= mainGame->gSettings.cbName_texture[mainGame->gSettings.clickedindex]->getItemCount() - 1) selected = 0;
+				else selected++;
+				mainGame->gSettings.cbName_texture[mainGame->gSettings.clickedindex]->setSelected(selected);
+				std::wstring filepath = std::wstring(mainGame->gSettings.cbName_texture[mainGame->gSettings.clickedindex]->getItem(selected));
+				auto tTexture = mainGame->imageManager.UpdatetTexture(mainGame->gSettings.clickedindex, filepath);
+				if(tTexture != nullptr) {
+					mainGame->gSettings.btnrandomtexture->setImage(tTexture);
+					mainGame->gSettings.btnrandomtexture2->setImage(tTexture);
+					if(mainGame->gSettings.clickedindex == 18) mainGame->btnSettings->setImage(mainGame->imageManager.tSettings);
+					if(mainGame->gSettings.clickedindex == 19) {
+						mainGame->btnHand[0]->setImage(mainGame->imageManager.tHand[0]);
+						mainGame->btnHand[1]->setImage(mainGame->imageManager.tHand[1]);
+						mainGame->btnHand[2]->setImage(mainGame->imageManager.tHand[2]);
+					}
+					mainGame->driver->removeTexture(tTexture);
+					tTexture = nullptr;
+				}
+				break;
+			}
+			case BUTTON_TEXTURE_SELECT: {
+				if(mainGame->gSettings.clickedindex < 0) break;
+				int selected = mainGame->gSettings.cbName_texture[mainGame->gSettings.clickedindex]->getSelected();
+				if(mainGame->gSettings.cbName_texture[mainGame->gSettings.clickedindex]->getItemCount() < 2) break;
+				if(selected == 0) selected = mainGame->gSettings.cbName_texture[mainGame->gSettings.clickedindex]->getItemCount() - 1;
+				else selected--;
+				mainGame->gSettings.cbName_texture[mainGame->gSettings.clickedindex]->setSelected(selected);
+				std::wstring filepath = std::wstring(mainGame->gSettings.cbName_texture[mainGame->gSettings.clickedindex]->getItem(selected));
+				auto tTexture = mainGame->imageManager.UpdatetTexture(mainGame->gSettings.clickedindex, filepath);
+				if(tTexture != nullptr) {
+					mainGame->gSettings.btnrandomtexture->setImage(tTexture);
+					mainGame->gSettings.btnrandomtexture2->setImage(tTexture);
+					if(mainGame->gSettings.clickedindex == 18) mainGame->btnSettings->setImage(mainGame->imageManager.tSettings);
+					if(mainGame->gSettings.clickedindex == 19) {
+						mainGame->btnHand[0]->setImage(mainGame->imageManager.tHand[0]);
+						mainGame->btnHand[1]->setImage(mainGame->imageManager.tHand[1]);
+						mainGame->btnHand[2]->setImage(mainGame->imageManager.tHand[2]);
+					}
+					mainGame->driver->removeTexture(tTexture);
+					tTexture = nullptr;
+				}
+				break;
+			}
+			case BUTTON_TEXTURE_OK: {
+				mainGame->HideElement(mainGame->gSettings.wRandomTexture);
+				mainGame->ShowElement(mainGame->gSettings.window);
+				break;
+			}
+			case BUTTON_TEXTURE_OK2: {
+				mainGame->HideElement(mainGame->gSettings.wRandomWallpaper);
+				mainGame->ShowElement(mainGame->gSettings.window);
+				break;
+			}
+			//////kdiy///////
 			case BUTTON_APPLY_RESTART: {
 				try {
 					gGameConfig->dpi_scale = static_cast<uint32_t>(std::stol(mainGame->gSettings.ebDpiScale->getText())) / 100.0;
+					//////kdiy///////
+					gGameConfig->textfont.size = static_cast<uint32_t>(std::stol(mainGame->gSettings.ebFontSize->getText()));
+					//////kdiy///////
 					mainGame->restart = true;
 					//mainGame->device->closeDevice();
 				} catch(...){}
@@ -1945,6 +2485,155 @@ bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation)
 				gSoundManager->EnableSounds(gGameConfig->enablesound);
 				return true;
 			}
+			/////kdiy/////////
+			case CHECKBOX_ENABLE_SSOUND: {
+				gGameConfig->enablessound = static_cast<irr::gui::IGUICheckBox*>(event.GUIEvent.Caller)->isChecked();
+				if(gGameConfig->enablessound)
+					mainGame->chantcheck();
+				return true;
+			}
+			case CHECKBOX_ENABLE_CSOUND: {
+				gGameConfig->enablecsound = static_cast<irr::gui::IGUICheckBox*>(event.GUIEvent.Caller)->isChecked();
+				if(gGameConfig->enablecsound)
+					mainGame->chantcheck();
+				return true;
+			}
+			case CHECKBOX_ENABLE_ASOUND: {
+				gGameConfig->enableasound = static_cast<irr::gui::IGUICheckBox*>(event.GUIEvent.Caller)->isChecked();
+				if(gGameConfig->enableasound)
+					mainGame->chantcheck();
+				return true;
+			}
+			case CHECKBOX_ENABLE_ANIMESOUND: {
+				gGameConfig->enableanimesound = static_cast<irr::gui::IGUICheckBox *>(event.GUIEvent.Caller)->isChecked();
+				return true;
+			}
+			case CHECKBOX_ENABLE_ANIME: {
+				gGameConfig->enableanime = static_cast<irr::gui::IGUICheckBox *>(event.GUIEvent.Caller)->isChecked();
+				mainGame->moviecheck();
+				return true;
+			}
+			case CHECKBOX_ENABLE_SANIME: {
+				gGameConfig->enablesanime = static_cast<irr::gui::IGUICheckBox *>(event.GUIEvent.Caller)->isChecked();
+				mainGame->moviecheck(0);
+				return true;
+			}
+			case CHECKBOX_ENABLE_CANIME: {
+				gGameConfig->enablecanime = static_cast<irr::gui::IGUICheckBox *>(event.GUIEvent.Caller)->isChecked();
+				mainGame->moviecheck(1);
+				return true;
+			}
+			case CHECKBOX_ENABLE_AANIME: {
+				gGameConfig->enableaanime = static_cast<irr::gui::IGUICheckBox *>(event.GUIEvent.Caller)->isChecked();
+				mainGame->moviecheck(2);
+				return true;
+			}
+			case CHECKBOX_ENABLE_FANIME: {
+				gGameConfig->enablefanime = static_cast<irr::gui::IGUICheckBox *>(event.GUIEvent.Caller)->isChecked();
+				mainGame->moviecheck(3);
+				return true;
+			}
+			case CHECKBOX_ENABLE_MCANIME: {
+				gGameConfig->enablemcanime = static_cast<irr::gui::IGUICheckBox *>(event.GUIEvent.Caller)->isChecked();
+				mainGame->moviecheck(4);
+				return true;
+			}
+			case CHECKBOX_ANIME_FULL: {
+				gGameConfig->animefull = static_cast<irr::gui::IGUICheckBox*>(event.GUIEvent.Caller)->isChecked();
+				return true;
+			}
+			case CHECKBOX_HIDE_NAME_TAG:{
+				gGameConfig->chkHideNameTag = mainGame->gSettings.chkHideNameTag->isChecked();
+				return true;
+			}
+            case CHECKBOX_RANDOM_TEXTURE:{
+				gGameConfig->randomtexture = mainGame->gSettings.chkRandomtexture->isChecked();
+				if(!gGameConfig->randomtexture) {
+					mainGame->HideElement(mainGame->gSettings.window);
+					mainGame->ShowElement(mainGame->gSettings.wRandomTexture);
+				}
+				return true;
+			}
+            case CHECKBOX_RANDOM_WALLPAPER:{
+				gGameConfig->randomwallpaper = mainGame->gSettings.chkRandomwallpaper->isChecked();
+				if(!gGameConfig->randomwallpaper) {
+					mainGame->HideElement(mainGame->gSettings.window);
+					mainGame->ShowElement(mainGame->gSettings.wRandomWallpaper);
+				}
+				return true;
+			}
+            case CHECKBOX_TEXTURE:{
+				mainGame->gSettings.clickedchkbox = true;
+				auto checkboxtexture = static_cast<irr::gui::IGUICheckBox*>(event.GUIEvent.Caller);
+				int k = 0;
+				bool visible = false;
+				std::wstring filepath = L"";
+				for(int i = 0; i < 20; i++) {
+					if(mainGame->gSettings.chktexture[i] == checkboxtexture) {
+					    k = i;
+						std::tie(visible, filepath) = mainGame->SetRandTexture(i, 1);
+						break;
+					}
+				}
+				mainGame->gSettings.clickedindex = k;
+				mainGame->gSettings.cbName_texture[k]->setVisible(!visible);
+				if(!visible) {
+					int selected = mainGame->gSettings.cbName_texture[k]->getSelected();
+					if (selected < 0) {
+						selected = 0;
+						mainGame->gSettings.cbName_texture[k]->setSelected(0);
+					}
+					if(filepath == L"") filepath = std::wstring(mainGame->gSettings.cbName_texture[k]->getItem(0));
+					auto tTexture = mainGame->imageManager.UpdatetTexture(k, filepath);
+					if(tTexture != nullptr) {
+						mainGame->gSettings.btnrandomtexture->setImage(tTexture);
+						mainGame->gSettings.btnrandomtexture2->setImage(tTexture);
+						if(k == 18) mainGame->btnSettings->setImage(mainGame->imageManager.tSettings);
+						if(k == 19) {
+							mainGame->btnHand[0]->setImage(mainGame->imageManager.tHand[0]);
+							mainGame->btnHand[1]->setImage(mainGame->imageManager.tHand[1]);
+							mainGame->btnHand[2]->setImage(mainGame->imageManager.tHand[2]);
+						}
+						mainGame->driver->removeTexture(tTexture);
+						tTexture = nullptr;
+					}
+				} else {
+				    mainGame->gSettings.btnrandomtexture->setImage(0);
+					mainGame->gSettings.btnrandomtexture2->setImage(0);
+				}
+				return true;
+			}
+            case CHECKBOX_VWALLPAPER:{
+				gGameConfig->videowallpaper = mainGame->gSettings.chkVideowallpaper->isChecked();
+				mainGame->gSettings.chkRandomVideowallpaper->setEnabled(gGameConfig->videowallpaper);
+				mainGame->gSettings.cbVideowallpaper->setEnabled(gGameConfig->videowallpaper && !gGameConfig->randomvideowallpaper);
+				return true;
+			}
+            case CHECKBOX_RANDOM_VWALLPAPER:{
+				gGameConfig->randomvideowallpaper = mainGame->gSettings.chkRandomVideowallpaper->isChecked();
+				if(gGameConfig->randomvideowallpaper) mainGame->imageManager.GetRandomVWallpaper();
+				mainGame->gSettings.cbVideowallpaper->setEnabled(gGameConfig->videowallpaper && !gGameConfig->randomvideowallpaper);
+				return true;
+			}
+            case CHECKBOX_CLOSEUP:{
+				gGameConfig->closeup = mainGame->gSettings.chkCloseup->isChecked();
+				return true;
+			}
+            case CHECKBOX_PAINTING:{
+				gGameConfig->painting = mainGame->gSettings.chkPainting->isChecked();
+				return true;
+			}
+            case CHECKBOX_PAUSE_DUEL: {
+				gGameConfig->pauseduel = mainGame->gSettings.chkPauseduel->isChecked();
+				break;
+			}
+			// case CHECKBOX_HIDE_PASSCODE_SCOPE: {
+			// 	gGameConfig->hidePasscodeScope = mainGame->gSettings.chkHidePasscodeScope->isChecked();
+			// 	mainGame->stPasscodeScope->setVisible(!gGameConfig->hidePasscodeScope);
+			// 	mainGame->RefreshCardInfoTextPositions();
+			// 	return true;
+			// }
+			/////kdiy/////////
 			case CHECKBOX_QUICK_ANIMATION: {
 				gGameConfig->quick_animation = mainGame->tabSettings.chkQuickAnimation->isChecked();
 				return true;
@@ -1957,12 +2646,6 @@ bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation)
 			case CHECKBOX_HIDE_ARCHETYPES: {
 				gGameConfig->chkHideSetname = mainGame->gSettings.chkHideSetname->isChecked();
 				mainGame->stSetName->setVisible(!gGameConfig->chkHideSetname);
-				mainGame->RefreshCardInfoTextPositions();
-				return true;
-			}
-			case CHECKBOX_HIDE_PASSCODE_SCOPE: {
-				gGameConfig->hidePasscodeScope = mainGame->gSettings.chkHidePasscodeScope->isChecked();
-				mainGame->stPasscodeScope->setVisible(!gGameConfig->hidePasscodeScope);
 				mainGame->RefreshCardInfoTextPositions();
 				return true;
 			}
@@ -2142,6 +2825,56 @@ bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation)
 				mainGame->ApplyLocale(mainGame->gSettings.cbCurrentLocale->getSelected());
 				return true;
 			}
+			///kdiy///////
+			case COMBOBOX_CURRENT_FONT: {
+				int selected = mainGame->gSettings.cbCurrentFont->getSelected();
+				if (selected < 0) return true;
+				gGameConfig->textfont.font = Utils::ToPathString(epro::format(L"fonts/{}", mainGame->gSettings.cbCurrentFont->getItem(selected)));
+				return true;
+			}
+			case COMBOBOX_TEXTURE: {
+				mainGame->gSettings.clickedchkbox = false;
+				auto comboboxtexture = static_cast<irr::gui::IGUIComboBox*>(event.GUIEvent.Caller);
+				int k = 0;
+				bool visible = false;
+				std::wstring setfilepath = L"", filepath = L"";
+				for(int i = 0; i < 20; i++) {
+					if(mainGame->gSettings.cbName_texture[i] == comboboxtexture) {
+						k = i;
+						int selected = mainGame->gSettings.cbName_texture[k]->getSelected();
+						if (selected < 0) {
+							selected = 0;
+							mainGame->gSettings.cbName_texture[k]->setSelected(0);
+						}
+						setfilepath = std::wstring(mainGame->gSettings.cbName_texture[i]->getItem(selected));
+						std::tie(visible, filepath) = mainGame->SetRandTexture(i, 2, setfilepath);
+						break;
+					}
+				}
+				mainGame->gSettings.clickedindex = k;
+				auto tTexture = mainGame->imageManager.UpdatetTexture(k, filepath);
+				if(k == 18) mainGame->btnSettings->setImage(mainGame->imageManager.tSettings);
+				if(k == 19) {
+					mainGame->btnHand[0]->setImage(mainGame->imageManager.tHand[0]);
+					mainGame->btnHand[1]->setImage(mainGame->imageManager.tHand[1]);
+					mainGame->btnHand[2]->setImage(mainGame->imageManager.tHand[2]);
+				}
+				if(tTexture != nullptr) {
+					mainGame->gSettings.btnrandomtexture->setImage(tTexture);
+					mainGame->gSettings.btnrandomtexture2->setImage(tTexture);
+					mainGame->driver->removeTexture(tTexture);
+					tTexture = nullptr;
+				}
+				return true;
+			}
+			case COMBOBOX_VIDEO_WALLPAPER: {
+				int selected = mainGame->gSettings.cbVideowallpaper->getSelected();
+				if (selected < 0) return true;
+				gGameConfig->videowallpapertexture = Utils::ToUTF8IfNeeded(mainGame->gSettings.cbVideowallpaper->getItem(selected));
+				mainGame->videowallpaper_path = "wallpaper/" + gGameConfig->videowallpapertexture;
+				return true;
+			}
+			///kdiy///////
 			case COMBOBOX_CORE_LOG_OUTPUT: {
 				int selected = mainGame->gSettings.cbCoreLogOutput->getSelected();
 				if (selected < 0) return true;
@@ -2192,14 +2925,16 @@ bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation)
 				mainGame->device->minimizeWindow();
 			return true;
 		}
-		case irr::KEY_F9: {
-			if (!event.KeyInput.PressedDown) {
-				const auto new_val = !mainGame->current_topdown;
-				GUIUtils::SetCheckbox(mainGame->device.get(), mainGame->gSettings.chkTopdown, new_val);
-				GUIUtils::SetCheckbox(mainGame->device.get(), mainGame->gSettings.chkKeepFieldRatio, new_val);
-			}
-			return true;
-		}
+		///kdiy///////
+		// case irr::KEY_F9: {
+		// 	if (!event.KeyInput.PressedDown) {
+		// 		const auto new_val = !mainGame->current_topdown;
+		// 		GUIUtils::SetCheckbox(mainGame->device.get(), mainGame->gSettings.chkTopdown, new_val);
+		// 		GUIUtils::SetCheckbox(mainGame->device.get(), mainGame->gSettings.chkKeepFieldRatio, new_val);
+		// 	}
+		// 	return true;
+		// }
+		///kdiy///////
 		case irr::KEY_F10: {
 			if(event.KeyInput.Shift)
 				gGameConfig->windowStruct.clear();
@@ -2239,11 +2974,13 @@ bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation)
 				mainGame->wInfos->setActiveTab(3);
 			break;
 		}
-		case irr::KEY_KEY_5: {
-			if (event.KeyInput.Control && !event.KeyInput.PressedDown)
-				mainGame->wInfos->setActiveTab(4);
-			break;
-		}
+		/////kdiy/////////
+		// case irr::KEY_KEY_5: {
+		// 	if (event.KeyInput.Control && !event.KeyInput.PressedDown)
+		// 		mainGame->wInfos->setActiveTab(4);
+		// 	break;
+		// }
+		/////kdiy/////////
 		default: break;
 		}
 		break;
@@ -2304,7 +3041,7 @@ bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation)
 		if(event.MouseInput.Event == irr::EMIE_LMOUSE_PRESSED_DOWN && mainGame->showingcard) {
 			irr::gui::IGUIElement* root = mainGame->env->getRootGUIElement();
 			irr::gui::IGUIElement* elem = root->getElementFromPoint({ event.MouseInput.X, event.MouseInput.Y });
-			if(elem == mainGame->stName) {
+            if(elem == mainGame->stName) {
 				auto path = mainGame->FindScript(epro::format(EPRO_TEXT("c{}.lua"), mainGame->showingcard));
 				if(path.empty()) {
 					auto cd = gDataManager->GetCardData(mainGame->showingcard);
@@ -2314,9 +3051,25 @@ bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation)
 				if(path.size() && path != EPRO_TEXT("archives"))
 					Utils::SystemOpen(path, Utils::OPEN_FILE);
 			} else if(elem == mainGame->stPasscodeScope) {
-				Utils::OSOperator->copyToClipboard(epro::format(L"{}", mainGame->showingcard).data());
+                ///kdiy///////
+				//Utils::OSOperator->copyToClipboard(epro::format(L"{}", mainGame->showingcard).data());
+                auto cd = gDataManager->GetCardData(mainGame->showingcard);
+                if(cd && (cd->IsInArtworkOffsetRange() || (cd->alias && cd->alias > 0)))
+                    Utils::OSOperator->copyToClipboard(epro::format(L"{}", cd->alias).data());
+                else
+                    Utils::OSOperator->copyToClipboard(epro::format(L"{}", mainGame->showingcard).data());
+                ///kdiy///////
 			}
 		}
+        ///kdiy///////
+        if(event.MouseInput.Event == irr::EMIE_LMOUSE_DOUBLE_CLICK && mainGame->showingcard) {
+			irr::gui::IGUIElement* root = mainGame->env->getRootGUIElement();
+			irr::gui::IGUIElement* elem = root->getElementFromPoint({ event.MouseInput.X, event.MouseInput.Y });
+            if(elem == mainGame->stPasscodeScope) {
+                Utils::OSOperator->copyToClipboard(epro::format(L"{}", mainGame->showingcard).data());
+			}
+        }
+        ///kdiy///////
 		break;
 	}
 	case irr::EET_JOYSTICK_INPUT_EVENT: {
@@ -2654,7 +3407,10 @@ void ClientField::ShowMenu(int flag, int x, int y) {
 		height += increase;
 	} else mainGame->btnMSet->setVisible(false);
 	if(flag & COMMAND_SSET) {
-		if(!(clicked_card->type & TYPE_MONSTER))
+		/////kdiy///////////
+		// if(!(clicked_card->type & TYPE_MONSTER))
+		if(!(clicked_card->type & (TYPE_SPELL|TYPE_TRAP)))
+		/////kdiy///////////
 			mainGame->btnSSet->setText(gDataManager->GetSysString(1153).data());
 		else
 			mainGame->btnSSet->setText(gDataManager->GetSysString(1159).data());
@@ -2714,6 +3470,12 @@ void ClientField::UpdateChainButtons(irr::gui::IGUIElement* caller) {
 	} else {
 		auto SetButton = [caller=(irr::gui::IGUIButton*)caller](irr::gui::IGUIButton* button) {
 			const auto press = caller == button && caller->isPressed();
+            ////kdiy////////
+            if(press)
+                button->setImage(mainGame->imageManager.tButtonpress);
+            else
+                button->setImage(mainGame->imageManager.tButton);
+            ////kdiy////////
 			button->setPressed(press);
 			button->setSubElement(press);
 		};
@@ -2764,7 +3526,10 @@ void ClientField::SetShowMark(ClientCard* pcard, bool enable) {
 void ClientField::ShowCardInfoInList(ClientCard* pcard, irr::gui::IGUIElement* element, irr::gui::IGUIElement* parent) {
 	std::wstring str(L"");
 	if(pcard->code) {
-		str.append(gDataManager->GetName(pcard->code).data());
+		////kdiy///////////
+		//str.append(gDataManager->GetName(pcard->code).data());
+		str.append(gDataManager->GetName(pcard).data());
+		////kdiy///////////
 	}
 	if((pcard->status & STATUS_PROC_COMPLETE)
 		&& (pcard->type & (TYPE_RITUAL | TYPE_FUSION | TYPE_SYNCHRO | TYPE_XYZ | TYPE_LINK | TYPE_SPSUMMON)))
@@ -2775,7 +3540,10 @@ void ClientField::ShowCardInfoInList(ClientCard* pcard, irr::gui::IGUIElement* e
 			str.append(L"\n").append(epro::sprintf(gDataManager->GetSysString(216), i + 1));
 		}
 		if(chit.target.find(pcard) != chit.target.end()) {
-			str.append(L"\n").append(epro::sprintf(gDataManager->GetSysString(217), i + 1, gDataManager->GetName(chit.chain_card->code)));
+			////kdiy///////////
+			//str.append(L"\n").append(epro::sprintf(gDataManager->GetSysString(217), i + 1, gDataManager->GetName(chit.chain_card->code)));
+			str.append(L"\n").append(epro::sprintf(gDataManager->GetSysString(217), i + 1, gDataManager->GetName(chit.chain_card)));
+			////kdiy///////////
 		}
 	}
 	if(str.length() > 0) {
@@ -2895,6 +3663,10 @@ void ClientField::CancelOrFinish() {
 		DuelClient::SendPacketToServer(CTOS_REMATCH_RESPONSE, crr);
 		return;
 	}
+    //////////kdiy/////////
+    for(int i = 0; i < 5; ++i)
+        mainGame->selectedcard[i]->setVisible(false);
+    //////////kdiy/////////
 	switch (mainGame->dInfo.curMsg) {
 	case MSG_WAITING: {
 		if (mainGame->wCardSelect->isVisible()) {
@@ -2928,8 +3700,17 @@ void ClientField::CancelOrFinish() {
 	case MSG_SELECT_YESNO:
 	case MSG_SELECT_EFFECTYN: {
 		if (highlighting_card)
-			highlighting_card->is_highlighting = false;
+			////kdiy///////////
+			//highlighting_card->is_highlighting = false;
+			highlighting_card->is_activable = false;
+			////kdiy///////////
 		highlighting_card = 0;
+		////kdiy///////////
+        if(mainGame->dInfo.curMsg == MSG_SELECT_YESNO && reattack && attacker)
+            attacker->is_attacking = false;
+		if(mainGame->dInfo.curMsg == MSG_SELECT_YESNO && reattack && attack_target)
+			attack_target->is_attacked = false;
+		////kdiy///////////
 		DuelClient::SetResponseI(0);
 		mainGame->HideElement(mainGame->wQuery, true);
 		break;
@@ -3045,6 +3826,12 @@ void ClientField::ShowPileDisplayCards(int location, int player) {
 			if(pcard)
 				display_cards.insert(display_cards.end(), pcard->overlayed.begin(), pcard->overlayed.end());
 		}
+		//kdiy/////////
+		for(const auto& pcard : szone[player]) {
+			if(pcard)
+				display_cards.insert(display_cards.end(), pcard->overlayed.begin(), pcard->overlayed.end());
+		}
+		//kdiy/////////
 		break;
 	}
 	if(display_cards.size()) {
