@@ -112,6 +112,24 @@ void ClientCard::UpdateInfo(const CoreUtils::Query& query) {
 			linkstring = epro::format(L"L{}", link);
 		link_marker = query.link_marker;
 	}
+	// KCGCore entity changes are sent separately from ordinary field queries.
+	// Re-apply them after a query refresh so the database row cannot overwrite them.
+	if(is_change) {
+		type = rtype;
+		level = rlevel;
+		attribute = rattribute;
+		race = rrace;
+		attack = rattack;
+		defense = rdefense;
+		lscale = rlscale;
+		rscale = rrscale;
+		link_marker = rlink_marker;
+		lvstring = epro::format(L"L{}", level);
+		atkstring = attack < 0 ? L"?" : epro::to_wstring(attack);
+		defstring = defense < 0 ? L"?" : epro::to_wstring(defense);
+		lscstring = epro::to_wstring(lscale);
+		rscstring = epro::to_wstring(rscale);
+	}
 }
 void ClientCard::ClearTarget() {
 	for(auto& pcard : cardTarget) {
