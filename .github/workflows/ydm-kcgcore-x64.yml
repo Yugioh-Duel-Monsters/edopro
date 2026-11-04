@@ -57,6 +57,8 @@ jobs:
           & "$root\bootstrap-vcpkg.bat" -disableMetrics
           & "$root\vcpkg.exe" install fmt curl freetype sqlite3 libevent libgit2 libssh2 openssl libpng bzip2 zlib libjpeg-turbo nlohmann-json openal-soft libflac libvorbis --triplet x64-windows-static
           if ($LASTEXITCODE -ne 0) { throw "Static client dependencies failed to install" }
+          & "$root\vcpkg.exe" install ffmpeg --triplet x64-windows
+          if ($LASTEXITCODE -ne 0) { throw "FFmpeg dependencies failed to install" }
           & "$root\vcpkg.exe" integrate install
 
       - name: Stage FFmpeg headers, import libraries and runtime DLLs
@@ -131,6 +133,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path deploy | Out-Null
           Copy-Item "bin/x64/release/ygoprodll.exe" deploy/ -Force
           Copy-Item "bin/x64/release/ocgcore.dll" deploy/ -Force
+          Get-ChildItem "ffmpeg/bin/*.dll" | Copy-Item -Destination deploy/ -Force
           git clone --depth 1 --recurse-submodules --shallow-submodules https://github.com/ProjectIgnis/Distribution.git distribution
           Copy-Item "distribution/*" deploy/ -Recurse -Force
           Copy-Item "NotoSansJP-Regular.otf" deploy/ -Force
