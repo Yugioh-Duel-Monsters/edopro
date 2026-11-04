@@ -96,9 +96,10 @@ jobs:
         shell: pwsh
         run: |
           git clone --no-checkout https://github.com/Yugioh-Duel-Monsters/ocgcore-KCG.git ocgcore
-          git -C ocgcore checkout c7909008858e08d58a9f1bee6afc233274d1ac9
+          git -C ocgcore fetch origin ydm/official-first-kcg-core-rebuild
+          git -C ocgcore checkout FETCH_HEAD
           git -C ocgcore submodule update --init --recursive
-          if ((git -C ocgcore rev-parse HEAD).Trim() -ne "7c2a7bdc18bba102ef72097093e52a4c31189a26") {
+          if ((git -C ocgcore rev-parse HEAD).Trim() -ne "c7909008858e08d58a9f1bee6afc233274d1ac9") {
             throw "KCGCore checkout did not match the pinned revision"
           }
 
