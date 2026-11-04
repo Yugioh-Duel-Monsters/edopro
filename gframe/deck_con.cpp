@@ -15,6 +15,9 @@
 #include "single_mode.h"
 #include "client_card.h"
 #include "fmt.h"
+/////kdiy/////
+#include "sound_manager.h"
+/////kdiy/////
 
 namespace ygo {
 
@@ -47,6 +50,12 @@ static int parse_filter(const wchar_t* pstr, uint32_t& type) {
 		type = 6;
 		return 0;
 	}
+	/////kdiy/////
+	if(*pstr == L'\u221E') {
+		type = 7;
+		return 0;
+	}
+	/////kdiy/////
 	type = 0;
 	return 0;
 }
@@ -57,18 +66,25 @@ void DeckBuilder::Initialize(bool refresh) {
 	if(refresh)
 		mainGame->ClearCardInfo();
 	mainGame->mTopMenu->setVisible(false);
-	mainGame->wInfos->setVisible(true);
+    ////kdiy////
+	// mainGame->wInfos->setVisible(true);
+    ////kdiy////
 	mainGame->wCardImg->setVisible(true);
 	mainGame->wDeckEdit->setVisible(true);
 	mainGame->wFilter->setVisible(true);
 	mainGame->wSort->setVisible(true);
 	mainGame->btnLeaveGame->setVisible(true);
-	mainGame->btnLeaveGame->setText(gDataManager->GetSysString(1306).data());
+	////kdiy////
+	//mainGame->btnLeaveGame->setText(gDataManager->GetSysString(1306).data());
+	mainGame->btnLeaveGame->setToolTipText(gDataManager->GetSysString(1306).data());
+	////kdiy////
 	mainGame->btnSideOK->setVisible(false);
 	mainGame->btnSideShuffle->setVisible(false);
 	mainGame->btnSideSort->setVisible(false);
 	mainGame->btnSideReload->setVisible(false);
-	mainGame->btnHandTest->setVisible(true);
+    //////kdiy//////
+	//mainGame->btnHandTest->setVisible(true);
+    //////kdiy//////
 	mainGame->btnHandTestSettings->setVisible(true);
 	mainGame->btnYdkeManage->setVisible(true);
 	filterList = &gdeckManager->_lfList[mainGame->cbDBLFList->getSelected()];
@@ -87,6 +103,9 @@ void DeckBuilder::Initialize(bool refresh) {
 	hovered_seq = -1;
 	is_lastcard = 0;
 	is_draging = false;
+	/////////kdiy//////
+	prev_deckfolder = mainGame->cbDBDecks2->getSelected();
+	/////////kdiy//////
 	prev_deck = mainGame->cbDBDecks->getSelected();
 	prev_operation = 0;
 	mainGame->SetMessageWindow();
@@ -106,8 +125,17 @@ void DeckBuilder::Terminate(bool showmenu) {
 	if(showmenu) {
 		mainGame->wCardImg->setVisible(false);
 		mainGame->wInfos->setVisible(false);
+		////kdiy////
+		for(int i = 0; i < 8; i++)
+		    mainGame->CardInfo[i]->setVisible(false);
+		////kdiy////
 		mainGame->btnLeaveGame->setVisible(false);
 		mainGame->PopupElement(mainGame->wMainMenu);
+		////kdiy////////
+#ifdef EK
+		mainGame->PopupElement(mainGame->wQQ);
+#endif
+		////kdiy////////
 		mainGame->ClearTextures();
 		mainGame->ClearCardInfo(0);
 		gdeckManager->ClearDummies();
@@ -124,6 +152,11 @@ void DeckBuilder::Terminate(bool showmenu) {
 	int sel = mainGame->cbDBDecks->getSelected();
 	if(sel >= 0)
 		gGameConfig->lastdeck = mainGame->cbDBDecks->getItem(sel);
+	/////////kdiy/////
+	int sel2 = mainGame->cbDBDecks2->getSelected();
+	if(sel2 >= 0)
+	    gGameConfig->lastdeckfolder = mainGame->cbDBDecks2->getItem(sel2);
+	/////////kdiy/////
 	gGameConfig->lastlflist = gdeckManager->_lfList[mainGame->cbDBLFList->getSelected()].hash;
 }
 bool DeckBuilder::SetCurrentDeckFromFile(epro::path_stringview file, bool separated, RITUAL_LOCATION rituals_in_extra) {
@@ -166,8 +199,8 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 		if(mainGame->wQuery->isVisible() && id != BUTTON_YES && id != BUTTON_NO)
 			break;
 		if(mainGame->wLinkMarks->isVisible() && id != BUTTON_MARKERS_OK)
-			break;
-		switch(event.GUIEvent.EventType) {
+			break;					
+		switch(event.GUIEvent.EventType) {		
 		case irr::gui::EGET_BUTTON_CLICKED: {
 			switch(id) {
 			case BUTTON_HAND_TEST_SETTINGS: {
@@ -179,6 +212,13 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 				Terminate(false);
 				SingleMode::DuelOptions options("hand-test-mode");
 				options.handTestNoOpponent = mainGame->chkHandTestNoOpponent->isChecked();
+                ////////kdiy///////////
+				options.IshandTestOpponentDeck = mainGame->chkHandTestOpponentDeck->isChecked();
+                int sel = mainGame->cbHandTestDecks->getSelected();
+                int sel2 = mainGame->cbHandTestDecks2->getSelected();
+				auto folder = Utils::ToPathString(sel2 < 1 ? L"" : epro::format(L"{}/", mainGame->cbDBDecks2->getItem(sel2)));
+                DeckManager::LoadDeckFromFile(folder + Utils::ToPathString(mainGame->cbHandTestDecks->getItem(sel)), opponentdeck);
+                ////////kdiy///////////
 				try {
 					options.startingDrawCount = std::stoi(mainGame->ebHandTestStartHand->getText());
 				} catch(...) {}
@@ -261,7 +301,12 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 			}
 			case BUTTON_SAVE_DECK: {
 				int sel = mainGame->cbDBDecks->getSelected();
-				if(sel >= 0 && DeckManager::SaveDeck(Utils::ToPathString(mainGame->cbDBDecks->getItem(sel)), current_deck)) {
+				/////////kdiy/////
+				//if(sel >= 0 && DeckManager::SaveDeck(Utils::ToPathString(mainGame->cbDBDecks->getItem(sel)), current_deck)) {
+				int sel2 = mainGame->cbDBDecks2->getSelected();
+				auto folder = Utils::ToPathString(sel2 < 1 ? L"" : epro::format(L"{}/", mainGame->cbDBDecks2->getItem(sel2)));
+				if(sel >= 0 && sel2 >= 0 && DeckManager::SaveDeck(folder + Utils::ToPathString(mainGame->cbDBDecks->getItem(sel)), current_deck)) {
+				/////////kdiy/////
 					mainGame->stACMessage->setText(gDataManager->GetSysString(1335).data());
 					mainGame->PopupElement(mainGame->wACMessage, 20);
 				}
@@ -272,9 +317,18 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 				if(dname.empty())
 					break;
 				int sel = -1;
+				/////////kdiy/////
+				int sel2 = mainGame->cbDBDecks22->getSelected();
+				auto folder = Utils::ToPathString(sel2 < 1 ? L"" : epro::format(L"{}/", mainGame->cbDBDecks22->getItem(sel2)));
+				int sel22 = mainGame->cbDBDecks2->getSelected();
+				auto folder2 = Utils::ToPathString(sel22 < 1 ? L"" : epro::format(L"{}/", mainGame->cbDBDecks2->getItem(sel22)));
+				/////////kdiy/////
 				{
 					const auto upper = Utils::ToUpperNoAccents(dname);
 					for(irr::u32 i = 0; i < mainGame->cbDBDecks->getItemCount(); ++i) {
+						/////////kdiy/////
+						if(folder != folder2) break;
+						/////////kdiy/////
 						if(Utils::EqualIgnoreCaseFirst<epro::wstringview>(upper, mainGame->cbDBDecks->getItem(i))) {
 							sel = i;
 							break;
@@ -286,18 +340,24 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 					mainGame->PopupElement(mainGame->wACMessage, 40);
 					break;
 				} else {
+					/////////kdiy/////
+					mainGame->cbDBDecks2->setSelected(sel2);
+					/////////kdiy/////
 					mainGame->cbDBDecks->addItem(dname.data());
 					mainGame->cbDBDecks->setSelected(mainGame->cbDBDecks->getItemCount() - 1);
 				}
-				if(DeckManager::SaveDeck(Utils::ToPathString(dname), current_deck)) {
+				/////////kdiy/////
+				//if(DeckManager::SaveDeck(Utils::ToPathString(dname), current_deck)) {
+				if(sel2 >= 0 && DeckManager::SaveDeck(folder + Utils::ToPathString(dname), current_deck)) {
+				/////////kdiy/////
 					mainGame->stACMessage->setText(gDataManager->GetSysString(1335).data());
 					mainGame->PopupElement(mainGame->wACMessage, 20);
 				}
 				break;
 			}
 			case BUTTON_DELETE_DECK: {
-				int sel = mainGame->cbDBDecks->getSelected();
-				if(sel == -1)
+				int sel = mainGame->cbDBDecks->getSelected();				
+				if(sel == -1)	
 					break;
 				std::lock_guard<epro::mutex> lock(mainGame->gMutex);
 				mainGame->stQMessage->setText(epro::format(L"{}\n{}", mainGame->cbDBDecks->getItem(sel), gDataManager->GetSysString(1337)).data());
@@ -307,10 +367,20 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 			}
 			case BUTTON_RENAME_DECK: {
 				int sel = mainGame->cbDBDecks->getSelected();
+				/////////kdiy/////
+				int sel2 = mainGame->cbDBDecks22->getSelected();
+				auto folder = Utils::ToPathString(sel2 < 1 ? L"" : epro::format(L"{}/", mainGame->cbDBDecks22->getItem(sel2)));
+				int sel22 = mainGame->cbDBDecks2->getSelected();
+				auto folder2 = Utils::ToPathString(sel22 < 1 ? L"" : epro::format(L"{}/", mainGame->cbDBDecks2->getItem(sel22)));
 				const wchar_t* dname = mainGame->ebDeckname->getText();
-				if(sel == -1 || *dname == 0 || !wcscmp(dname, mainGame->cbDBDecks->getItem(sel)))
+				// if(sel == -1 || *dname == 0 || !wcscmp(dname, mainGame->cbDBDecks->getItem(sel)))
+				if(sel == -1 || sel2 < 0 || *dname == 0 || (!wcscmp(dname, mainGame->cbDBDecks->getItem(sel)) && folder == folder2))
+				/////////kdiy/////
 					break;
 				for(auto i = 0; i < static_cast<int>(mainGame->cbDBDecks->getItemCount()); ++i) {
+					/////////kdiy/////
+					if(folder != folder2) break;
+					/////////kdiy/////
 					if(i == sel)continue;
 					if(!wcscmp(dname, mainGame->cbDBDecks->getItem(i))) {
 						mainGame->stACMessage->setText(gDataManager->GetSysString(1339).data());
@@ -318,7 +388,11 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 						return false;
 					}
 				}
-				if(DeckManager::RenameDeck(Utils::ToPathString(mainGame->cbDBDecks->getItem(sel)), Utils::ToPathString(dname))) {
+				/////////kdiy/////
+				// if(DeckManager->RenameDeck(Utils::ToPathString(mainGame->cbDBDecks->getItem(sel)), Utils::ToPathString(dname))) {
+				if(sel2 >= 0 && sel22 >= 0 && DeckManager::RenameDeck(folder2 + Utils::ToPathString(mainGame->cbDBDecks->getItem(sel)), folder + Utils::ToPathString(dname))) {
+					mainGame->cbDBDecks2->setSelected(sel2);
+				/////////kdiy/////
 					mainGame->cbDBDecks->removeItem(sel);
 					mainGame->cbDBDecks->setSelected(mainGame->cbDBDecks->addItem(dname));
 				} else {
@@ -327,6 +401,91 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 				}
 				break;
 			}
+			/////////kdiy/////
+			case BUTTON_CARDINFO: {
+				auto elem = static_cast<irr::gui::IGUIButton*>(event.GUIEvent.Caller);
+				for (int i = 0; i < 8; i++) {
+					if(elem == mainGame->CardInfo[i]) {
+						mainGame->stText->setText(mainGame->effectText[i].data());
+						break;
+					}
+				}
+				break;
+			}
+			case BUTTON_AVATAR_CARD0: {
+				mainGame->cardbutton[0]->setPressed();
+				mainGame->cardbutton[1]->setPressed(false);
+				mainGame->cardbutton[2]->setPressed(false);
+                mainGame->cardbutton[0]->setImage(mainGame->imageManager.cardchant0);
+				mainGame->cardbutton[1]->setImage(mainGame->imageManager.cardchant01);
+				mainGame->cardbutton[2]->setImage(mainGame->imageManager.cardchant02);
+				break;
+			}
+			case BUTTON_AVATAR_CARD1: {
+				mainGame->cardbutton[0]->setPressed(false);
+				mainGame->cardbutton[1]->setPressed();
+				mainGame->cardbutton[2]->setPressed(false);
+                mainGame->cardbutton[0]->setImage(mainGame->imageManager.cardchant00);
+				mainGame->cardbutton[1]->setImage(mainGame->imageManager.cardchant1);
+				mainGame->cardbutton[2]->setImage(mainGame->imageManager.cardchant02);
+				break;
+			}
+			case BUTTON_AVATAR_CARD2: {
+				mainGame->cardbutton[0]->setPressed(false);
+				mainGame->cardbutton[1]->setPressed(false);
+				mainGame->cardbutton[2]->setPressed();
+                mainGame->cardbutton[0]->setImage(mainGame->imageManager.cardchant00);
+				mainGame->cardbutton[1]->setImage(mainGame->imageManager.cardchant01);
+				mainGame->cardbutton[2]->setImage(mainGame->imageManager.cardchant2);
+				break;
+			}
+			case BUTTON_PLAY_CARD: {
+				auto pointer = gDataManager->GetCardData(mainGame->showingcard);
+				if(!pointer) {
+					pointer = gDataManager->GetCardData(mainGame->showingcardalias);
+					if(!pointer) break;
+				}
+				uint16_t extra = 0;
+				uint32_t type = pointer->type;
+           		if(type & TYPE_MONSTER) {
+                	if(mainGame->cardbutton[0]->isPressed()) {
+                    	if(type & TYPE_PENDULUM) extra |= 0x20;
+                    	if(type & TYPE_LINK) extra |= 0x8;
+                    	if(type & TYPE_XYZ) extra |= 0x4;
+                    	if(type & TYPE_SYNCHRO) extra |= 0x2;
+                    	if(type & TYPE_FUSION) extra |= 0x1;
+                    	if(type & TYPE_RITUAL) extra |= 0x10;
+						if(type & SUMMON_TYPE_MAXIMUM) extra |= 0x800;
+						if((pointer->level >= 5) && !(type & (TYPE_PENDULUM | TYPE_LINK | TYPE_XYZ | TYPE_SYNCHRO | TYPE_FUSION | TYPE_RITUAL | TYPE_SPSUMMON))) extra |= 0x400;
+                    	gSoundManager->PlayChant(SoundManager::CHANT::SUMMON, mainGame->showingcard, mainGame->showingcardalias, 0, 0, extra);
+                	} else if(mainGame->cardbutton[1]->isPressed()) {
+                    	extra = 0x1;
+				    	gSoundManager->PlayChant(SoundManager::CHANT::ATTACK, mainGame->showingcard, mainGame->showingcardalias, 0, 0, extra);
+                	} else if(mainGame->cardbutton[2]->isPressed()) {
+                    	extra = 0x801;
+                    	gSoundManager->PlayChant(SoundManager::CHANT::ACTIVATE, mainGame->showingcard, mainGame->showingcardalias, 0, 0, extra);
+                	}
+            	} else {
+                	extra = 0x1;
+                	if(type & TYPE_SPELL) {
+                    	if(!(type & (TYPE_FIELD | TYPE_EQUIP | TYPE_CONTINUOUS | TYPE_RITUAL | TYPE_QUICKPLAY | TYPE_PENDULUM))) extra |= 0x4;
+                    	if(type & TYPE_QUICKPLAY) extra |= 0x8;
+                    	if(type & TYPE_CONTINUOUS) extra |= 0x10;
+                    	if(type & TYPE_EQUIP) extra |= 0x20;
+                    	if(type & TYPE_RITUAL) extra |= 0x40;
+                    	if(type & TYPE_FIELD) extra |= 0x1000;
+                    	if(type & TYPE_ACTION) extra |= 0x4000;
+                	}
+                	if(type & TYPE_TRAP) {
+                    	if(!(type & (TYPE_COUNTER | TYPE_CONTINUOUS))) extra |= 0x80;
+                    	if(type & TYPE_CONTINUOUS) extra |= 0x100;
+                    	if(type & TYPE_COUNTER) extra |= 0x200;
+                	}
+					gSoundManager->PlayChant(SoundManager::CHANT::ACTIVATE, mainGame->showingcard, mainGame->showingcardalias, 0, 0, extra);
+            	}
+				break;
+			}
+			/////////kdiy/////
 			case BUTTON_LEAVE_GAME: {
 				Terminate();
 				break;
@@ -351,7 +510,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 						filter_effect |= filter;
 				mainGame->HideElement(mainGame->wCategories);
 				break;
-			}
+			}		
 			case BUTTON_SIDE_OK: {
 				auto old_skills = DeckManager::TypeCount(gdeckManager->pre_deck.main, TYPE_SKILL);
 				auto new_skills = DeckManager::TypeCount(current_deck.main, TYPE_SKILL);
@@ -399,14 +558,23 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 				switch(prev_operation) {
 				case BUTTON_DELETE_DECK : {
 					int sel = mainGame->cbDBDecks->getSelected();
-					if(DeckManager::DeleteDeck(current_deck, Utils::ToPathString(mainGame->cbDBDecks->getItem(sel)))) {
+					/////////kdiy///////
+					int sel2 = mainGame->cbDBDecks2->getSelected();
+					auto folder = Utils::ToPathString(sel2 < 1 ? L"" : epro::format(L"{}/", mainGame->cbDBDecks2->getItem(sel2)));
+					//if(DeckManager->DeleteDeck(current_deck, Utils::ToPathString(mainGame->cbDBDecks->getItem(sel)))) {
+				    if(sel2 >= 0 && DeckManager::DeleteDeck(current_deck, folder + Utils::ToPathString(mainGame->cbDBDecks->getItem(sel)))) {
+					/////////kdiy///////
 						mainGame->cbDBDecks->removeItem(sel);
 						int count = mainGame->cbDBDecks->getItemCount();
 						if(sel >= count)
 							sel = count - 1;
 						mainGame->cbDBDecks->setSelected(sel);
-						if(sel != -1)
-							mainGame->deckBuilder.SetCurrentDeckFromFile(Utils::ToPathString(mainGame->cbDBDecks->getItem(sel)), true);
+                        /////////kdiy///////
+						//if(sel != -1)
+							//mainGame->deckBuilder.SetCurrentDeckFromFile(Utils::ToPathString(mainGame->cbDBDecks->getItem(sel)), true);
+                        if(sel >= 0 && sel2 >= 0)
+                            mainGame->deckBuilder.SetCurrentDeckFromFile(folder + Utils::ToPathString(mainGame->cbDBDecks->getItem(sel)), true);
+                        /////////kdiy///////
 						mainGame->stACMessage->setText(gDataManager->GetSysString(1338).data());
 						mainGame->PopupElement(mainGame->wACMessage, 20);
 						prev_deck = sel;
@@ -419,7 +587,14 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 				}
 				case COMBOBOX_DBDECKS: {
 					int sel = mainGame->cbDBDecks->getSelected();
-					mainGame->deckBuilder.SetCurrentDeckFromFile(Utils::ToPathString(mainGame->cbDBDecks->getItem(sel)), true);
+					/////////kdiy///////
+					int sel2 = mainGame->cbDBDecks2->getSelected();
+					auto folder = Utils::ToPathString(sel2 < 1 ? L"" : epro::format(L"{}/", mainGame->cbDBDecks2->getItem(sel2)));
+					//mainGame->deckBuilder.SetCurrentDeckFromFile(Utils::ToPathString(mainGame->cbDBDecks->getItem(sel)), true);
+					if(sel >= 0 && sel2 >= 0)
+						mainGame->deckBuilder.SetCurrentDeckFromFile(folder + Utils::ToPathString(mainGame->cbDBDecks->getItem(sel)), true);
+					prev_deckfolder = sel2;
+					/////////kdiy///////
 					prev_deck = sel;
 					break;
 				}
@@ -515,13 +690,49 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 				StartFilter(true);
 				break;
 			}
-			case COMBOBOX_DBDECKS: {
-				int sel = mainGame->cbDBDecks->getSelected();
-				if(sel >= 0)
-					mainGame->deckBuilder.SetCurrentDeckFromFile(Utils::ToPathString(mainGame->cbDBDecks->getItem(sel)), true);
-				prev_deck = sel;
+			///////kdiy//////////
+            case COMBOBOX_CHARACTER_DECK: {
+				bool filechk = mainGame->chantcheck();
+				if(!filechk)
+					break;
+                int sel = mainGame->ebCharacterDeck->getSelected();
+				mainGame->charactcomboselect(0, 3, sel);
 				break;
 			}
+			case COMBOBOX_HTDECKS2: {
+				int sel = mainGame->cbHandTestDecks2->getSelected();
+				if(sel >= 0)
+				    mainGame->RefreshDeck(mainGame->cbHandTestDecks);
+				else
+                    break;
+			}
+			case COMBOBOX_DBDECKS2: {
+				int sel = mainGame->cbDBDecks->getSelected();
+				int sel2 = mainGame->cbDBDecks2->getSelected();
+                mainGame->cbDBDecks22->setSelected(sel2);
+				if(sel2 >= 0)
+				    mainGame->RefreshDeck(mainGame->cbDBDecks);
+				else
+                    break;
+			}
+			///////kdiy/////
+			case COMBOBOX_DBDECKS: {
+				int sel = mainGame->cbDBDecks->getSelected();
+				///////kdiy/////
+				// if(sel >= 0)
+				// 	mainGame->deckBuilder.SetCurrentDeckFromFile(Utils::ToPathString(mainGame->cbDBDecks->getItem(sel)), true);
+				int sel2 = mainGame->cbDBDecks2->getSelected();
+				if(sel >= 0 && sel2 >= 0) {
+					auto folder = Utils::ToPathString(sel2 < 1 ? L"" : epro::format(L"{}/", mainGame->cbDBDecks2->getItem(sel2)));
+					mainGame->deckBuilder.SetCurrentDeckFromFile(folder + Utils::ToPathString(mainGame->cbDBDecks->getItem(sel)), true);
+				}
+				else 
+                    break;
+				prev_deckfolder = sel2;
+				/////kdiy/////
+				prev_deck = sel;
+				break;
+			}			
 			case COMBOBOX_MAINTYPE: {
 				mainGame->ReloadCBCardType2();
 				mainGame->cbAttribute->setSelected(0);
@@ -612,6 +823,18 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 					StartFilter(true);
 					break;
 				}
+                ///////kdiy////
+                case CHECKBOX_OPPONENT_DECK: {
+                    if(mainGame->chkHandTestOpponentDeck->isChecked()) {
+                        mainGame->cbHandTestDecks2->setEnabled(true);
+                        mainGame->cbHandTestDecks->setEnabled(true);
+                    } else {
+                        mainGame->cbHandTestDecks2->setEnabled(false);
+                        mainGame->cbHandTestDecks->setEnabled(false);
+                    }
+                    break;
+                }
+                ///////kdiy////
 			}
 			break;
 		}
@@ -886,7 +1109,12 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 			case irr::DROP_END: {
 				if(to_open_file.size()) {
 					auto extension = Utils::GetFileExtension(to_open_file);
-					if(!mainGame->is_siding && extension == L"ydk" && mainGame->deckBuilder.SetCurrentDeckFromFile(Utils::ToPathString(to_open_file), true)) {
+					/////////kdiy/////
+					//if(!mainGame->is_siding && extension == L"ydk" && mainGame->deckBuilder.SetCurrentDeckFromFile(Utils::ToPathString(to_open_file), true)) {
+				    int sel2 = mainGame->cbDBDecks2->getSelected();
+					auto folder = Utils::ToPathString(sel2 < 1 ? L"" : epro::format(L"{}/", mainGame->cbDBDecks2->getItem(sel2)));
+					if(!mainGame->is_siding && extension == L"ydk" && mainGame->deckBuilder.SetCurrentDeckFromFile(folder + Utils::ToPathString(to_open_file), true)) {
+			        ////kdiy//////////
 						auto name = Utils::GetFileName(to_open_file);
 						mainGame->ebDeckname->setText(name.data());
 						mainGame->cbDBDecks->setSelected(-1);
@@ -1202,14 +1430,21 @@ bool DeckBuilder::CheckCardProperties(const CardDataM& data) {
 		if(filter_atktype) {
 			if((filter_atktype == 1 && data._data.attack != filter_atk) || (filter_atktype == 2 && data._data.attack < filter_atk)
 				|| (filter_atktype == 3 && data._data.attack <= filter_atk) || (filter_atktype == 4 && (data._data.attack > filter_atk || data._data.attack < 0))
-				|| (filter_atktype == 5 && (data._data.attack >= filter_atk || data._data.attack < 0)) || (filter_atktype == 6 && data._data.attack != -2))
+                /////kdiy//////
+				// || (filter_atktype == 5 && (data._data.attack >= filter_atk || data._data.attack < 0)) || (filter_atktype == 6 && data._data.attack != -2))
+                || (filter_atktype == 5 && (data._data.attack >= filter_atk || data._data.attack < 0)) || (filter_atktype == 6 && data._data.attack != -2)
+                || (filter_atktype == 7 && data._data.attack < 8888888))
+                /////kdiy//////
 				return false;
 		}
 		if(filter_deftype) {
 			if((filter_deftype == 1 && data._data.defense != filter_def) || (filter_deftype == 2 && data._data.defense < filter_def)
 				|| (filter_deftype == 3 && data._data.defense <= filter_def) || (filter_deftype == 4 && (data._data.defense > filter_def || data._data.defense < 0))
 				|| (filter_deftype == 5 && (data._data.defense >= filter_def || data._data.defense < 0)) || (filter_deftype == 6 && data._data.defense != -2)
-				|| (data._data.type & TYPE_LINK))
+                /////kdiy//////
+				//|| (data._data.type & TYPE_LINK))
+				|| (data._data.type & TYPE_LINK) || (filter_atktype == 7 && data._data.defense < 8888888))
+				/////kdiy//////
 				return false;
 		}
 		if(filter_lvtype) {
@@ -1302,6 +1537,12 @@ bool DeckBuilder::CheckCardProperties(const CardDataM& data) {
 				if(data._data.ot != SCOPE_ANIME)
 					return false;
 				break;
+			/////zdiy/////
+			case LIMITATION_FILTER_ZCG:
+				if(data._data.ot != SCOPE_ZCG)
+					return false;
+				break;
+			/////zdiy/////
 			case LIMITATION_FILTER_ILLEGAL:
 				if(data._data.ot != SCOPE_ILLEGAL)
 					return false;
@@ -1325,7 +1566,17 @@ bool DeckBuilder::CheckCardProperties(const CardDataM& data) {
 static const auto& CardSetcodes(const CardDataC& data) {
 	if(data.alias) {
 		if(auto _data = gDataManager->GetCardData(data.alias); _data)
-			return _data->setcodes;
+		    ///kdiy/////////
+			//return _data->setcodes;
+			{
+				if(auto _data2 = gDataManager->GetCardData(data.code); _data2) {
+				    std::vector<uint16_t> vx;
+					vx.insert(vx.end(), _data->setcodes.begin(), _data->setcodes.end());
+					vx.insert(vx.end(), _data2->setcodes.begin(), _data2->setcodes.end());
+					return vx;
+				}
+			}
+			///kdiy/////////
 	}
 	return data.setcodes;
 }
@@ -1624,7 +1875,7 @@ bool DeckBuilder::push_extra(const CardDataC* pointer, int seq, bool forced) {
 		if(main_and_extra_legend_count_monster >= 1 && (pointer->ot & SCOPE_LEGEND))
 			return false;
 		if(container.size() >= 15)
-			return false;
+		return false;
 	}
 	if(seq >= 0 && seq < (int)container.size())
 		container.insert(container.begin() + seq, pointer);
@@ -1688,6 +1939,9 @@ bool DeckBuilder::check_limit(const CardDataC* pointer) {
 					limit = std::min(limit, it->second);
 				else if((it = filterList->content.find(pcard->alias)) != endit)
 					limit = std::min(limit, it->second);
+                ///////kdiy///////////////
+                if(pcard->code != 102 && pcard->code != 213)
+                ///////kdiy///////////////
 				found++;
 			}
 			if(limit <= found)
