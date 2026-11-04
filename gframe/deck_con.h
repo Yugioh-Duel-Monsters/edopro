@@ -31,6 +31,9 @@ public:
 		LIMITATION_FILTER_RUSH,
 		LIMITATION_FILTER_LEGEND,
 		LIMITATION_FILTER_ANIME,
+		/////zdiy/////
+		LIMITATION_FILTER_ZCG,
+		/////zdiy/////
 		LIMITATION_FILTER_ILLEGAL,
 		LIMITATION_FILTER_VIDEOGAME,
 		LIMITATION_FILTER_CUSTOM,
@@ -68,6 +71,11 @@ public:
 	const Deck& GetCurrentDeck() const {
 		return current_deck;
 	}
+	 ////////kdiy///////////
+	 const Deck& GetOpponentDeck() const {
+		return opponentdeck;
+	}
+    ////////kdiy///////////
 	bool SetCurrentDeckFromFile(epro::path_stringview file, bool separated = false, RITUAL_LOCATION rituals_in_extra = RITUAL_LOCATION::DEFAULT);
 	void SetCurrentDeck(Deck new_deck) {
 		current_deck = std::move(new_deck);
@@ -117,7 +125,10 @@ private:
 	DECLARE_WITH_CACHE(uint32_t, filter_deftype)
 	DECLARE_WITH_CACHE(int32_t, filter_def)
 	DECLARE_WITH_CACHE(uint32_t, filter_lvtype)
-	DECLARE_WITH_CACHE(uint32_t, filter_lv)
+    ////kdiy/////////
+	//DECLARE_WITH_CACHE(uint32_t, filter_lv)
+    DECLARE_WITH_CACHE(int32_t, filter_lv)
+    ////kdiy/////////
 	DECLARE_WITH_CACHE(uint32_t, filter_scltype)
 	DECLARE_WITH_CACHE(uint32_t, filter_scl)
 	DECLARE_WITH_CACHE(uint32_t, filter_marks)
@@ -131,6 +142,9 @@ private:
 	uint16_t main_legend_count_trap;
 	uint16_t main_skill_count;
 	Deck current_deck;
+	//////////kdiy//////
+    Deck opponentdeck;
+	//////////kdiy//////
 public:
 	uint32_t hovered_code;
 	int hovered_pos;
@@ -143,6 +157,9 @@ public:
 	int dragy;
 	const CardDataC* dragging_pointer;
 	int prev_deck;
+	//////////kdiy//////
+	int prev_deckfolder;
+	//////////kdiy//////
 	int prev_operation;
 
 	uint16_t main_monster_count;
