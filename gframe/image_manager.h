@@ -11,6 +11,9 @@
 #include "epro_mutex.h"
 #include "epro_condition_variable.h"
 #include "epro_thread.h"
+///kdiy////////
+#include "common.h"
+///kdiy////////
 
 namespace irr {
 class IrrlichtDevice;
@@ -33,6 +36,9 @@ enum imgType {
 	ART,
 	FIELD,
 	COVER,
+	///kdiy///////////
+	CLOSEUP,
+	////kdiy///////////
 	THUMB
 };
 #endif
@@ -81,6 +87,32 @@ public:
 	ImageManager();
 	~ImageManager();
 	bool Initial();
+	/////kdiy/////
+    void SetAvatar(int player, const wchar_t *avatar);
+	epro::path_string ImageFolder[20];
+	std::vector<epro::path_string> ImageList[36+CHARACTER_VOICE+CHARACTER_VOICE-2];
+	int saved_image_id[36+CHARACTER_VOICE+CHARACTER_VOICE-2];
+	//random image
+	void GetRandomImage(irr::video::ITexture*& src, int image_type, bool force_random=false);
+	void GetRandomImage(irr::video::ITexture*& src, int image_type, int width, int height, bool force_random=false);
+	void GetRandomImagef(int width, int height);
+	void GetRandomCharacter(irr::video::ITexture*& src, std::vector<epro::path_string>& list);
+	void GetRandomVWallpaper();
+	void LoadCharacter(int player, int subcharacter);
+	void RefreshRandomImageList();
+	void RefreshImageDir(epro::path_string path, int image_type);
+	void RefreshImageDirf();
+	irr::video::ITexture* UpdatetTexture(int i, std::wstring filepath);
+	irr::core::rect<irr::s32> head_size[CHARACTER_STORY+1]; //story icon
+	irr::core::rect<irr::s32> modehead_size[6];
+	irr::core::rect<irr::s32> cutincharacter_size[CHARACTER_VOICE][3];
+	std::vector<epro::path_string> cutincharacter[CHARACTER_VOICE][6][3]; //cutin path, 1st: character(0=no character), 2nd: subcharacter, 3rd: emotion(0=damage, 1=advan, 2=surprise)
+	std::vector<epro::path_string> imgcharacter[CHARACTER_VOICE][6][3]; //bodycharacter path, 1st: character(0=no character), 2nd: subcharacter, 3rd: emotion(0=normal, 1=damage, 2=advan)
+	bool GetTextureCardHD(uint32_t code);
+	std::tuple<irr::video::ITexture*, irr::video::SColor> GetTextureCloseup(uint32_t code, uint32_t alias = 0, bool is_closeup=false);
+	std::tuple<irr::video::ITexture*, irr::video::SColor> GetTextureCloseupCode(uint32_t code, bool is_closeup=false);
+	/////kdiy/////
+
 	void ChangeTextures(epro::path_stringview path);
 	void ResetTextures();
 	void SetDevice(irr::IrrlichtDevice* dev);
@@ -105,10 +137,54 @@ private:
 	texture_map tThumb;
 	std::unordered_map<uint32_t, irr::video::ITexture*> tFields;
 	texture_map tCovers;
+	/////////kdiy////
+#define TEXTURE_MENU				0
+#define TEXTURE_BACKGROUND		    1
+#define TEXTURE_DECK				2
+#define TEXTURE_COVERS				3
+#define TEXTURE_COVERS2				4
+#define TEXTURE_COVERS3				5
+#define TEXTURE_COVERS4				6
+#define TEXTURE_UNKNOWN             7
+#define TEXTURE_ATTACK				8
+#define TEXTURE_ACTIVATE			9
+#define TEXTURE_CHAIN			    10
+#define TEXTURE_NEGATED			    11
+#define TEXTURE_MASK		        12
+#define TEXTURE_EQUIP		        13
+#define TEXTURE_TARGET		        14
+#define TEXTURE_CHAINTARGET		    15
+#define TEXTURE_LIM                 16
+#define TEXTURE_OT                  17
+#define TEXTURE_SETTING             18
+#define TEXTURE_F1		            19
+#define TEXTURE_field2		        20
+#define TEXTURE_field_transparent2	21
+#define TEXTURE_field3		        22
+#define TEXTURE_field_transparent3	23
+#define TEXTURE_field		        24
+#define TEXTURE_field_transparent	25
+#define TEXTURE_field4		        26
+#define TEXTURE_field_transparent4	27
+#define TEXTURE_field_fieldSP2	    28
+#define TEXTURE_field_transparentSP2 29
+#define TEXTURE_fieldSP3            30
+#define TEXTURE_field_transparentSP3 31
+#define TEXTURE_fieldSP             32
+#define TEXTURE_field_transparentSP 33
+#define TEXTURE_fieldSP4            34
+#define TEXTURE_field_transparentSP4 35
+
+	std::unordered_map<uint32_t, irr::video::ITexture*> tCloseup;
+    std::unordered_map<uint32_t, irr::video::SColor> tCloseupcolor;
+	/////////kdiy////
 	irr::IrrlichtDevice* device;
 	irr::video::IVideoDriver* driver;
 public:
-	irr::video::ITexture* tCover[2];
+    /////////kdiy////
+	// irr::video::ITexture* tCover[2];
+	irr::video::ITexture* tCover[4];
+    /////////kdiy////
 	irr::video::ITexture* tUnknown;
 #define A(what) \
 		public: \
@@ -120,8 +196,8 @@ public:
 	A(tNegated)
 	A(tChain)
 	A(tNumber)
-	A(tLPFrame)
 	A(tLPBar)
+	A(tLPFrame)
 	A(tMask)
 	A(tEquip)
 	A(tTarget)
@@ -135,6 +211,96 @@ public:
 	A(tBackGround_duel_topdown)
 	A(tField[2][4])
 	A(tFieldTransparent[2][4])
+	/////////kdiy////
+	A(tLPFrame_dm)
+	A(tLPFrame_dsod)
+	A(tLPFrame_gx[6])
+	A(tLPFrame_5ds)
+	A(tLPFrame_z4)
+	A(tLPFrame2_z4)
+	A(tLPFrame_a5)
+	A(tLPFrame2_a5)
+	A(tLPFrame_v6)
+	A(tRScale[14])
+	A(tLScale[14])
+	A(icon[CHARACTER_VOICE])
+	A(vs[CHARACTER_VOICE])
+	A(name[CHARACTER_VOICE])
+	A(lpicon[CHARACTER_VOICE])
+	A(bodycharacter[CHARACTER_VOICE][3])
+	A(cutin[CHARACTER_VOICE][3])
+	A(cardchant0)
+	A(cardchant1)
+	A(cardchant2)
+	A(cardchant00)
+	A(cardchant01)
+	A(cardchant02)
+	A(tcharacterselect)
+	A(tcharacterselect2)
+	A(tsubcharacterselect)
+	A(tsubcharacterselect2)
+	A(tsubcharacterselect3)
+	A(tsubcharacterselect4)
+	A(tsubcharacterselect5)
+	A(modeBody[CHAPTER])
+    A(head[CHARACTER_STORY+1]) //story icon
+	A(modeHead[6])
+	A(tXyz)
+	A(tCXyz)
+	A(tShield)
+	A(tCrack)
+	A(tLevel)
+	A(tRank)
+    A(tLvRank)
+	A(tLink)
+	A(tMain)
+	A(tDeck)
+	A(tGrave)
+	A(tRemoved)
+	A(tOnHand)
+	A(tExtra)
+	A(tExit)
+	A(tRestart)
+	A(tButton)
+	A(tButtonpress)
+	A(tButton2)
+	A(tStartReplay)
+	A(tPauseReplay)
+	A(tNextReplay)
+	A(tLastReplay)
+	A(tReplaySwap)
+	A(tTimer)
+	A(tHint)
+	A(tTick)
+	A(tLinkZone)
+	A(tLv[13])
+	A(tRk[13])
+	A(tLS[14])
+	A(tRS[14])
+	A(tLinkMarker[8])
+	A(tGodAtt)
+	A(tDARKAtt)
+	A(tLightAtt)
+	A(tWindAtt)
+	A(tEarthAtt)
+	A(tFireAtt)
+	A(tWaterAtt)
+	A(tNormType)
+	A(tEffectType)
+	A(tFusionType)
+	A(tSynchType)
+	A(tXyzType)
+	A(tRitualType)
+	A(tLinkType)
+	A(tNormPendType)
+	A(tEffPendType)
+	A(tFusPendType)
+	A(tSynPendType)
+	A(tXyzPendType)
+	A(tRitPendType)
+	A(tLinkPendType)
+	A(tTokenType)
+	/////kdiy/////
 	A(tSettings)
 	A(tCheckBox[3])
 #undef A
