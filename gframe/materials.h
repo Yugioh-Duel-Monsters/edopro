@@ -19,6 +19,26 @@ public:
 	QuadVertex vCardOutline;
 	QuadVertex vCardOutliner;
 	QuadVertex vCardBack;
+	////kdiy////////
+	QuadVertex vCardFront2;
+	QuadVertex vCardOutline2;
+	QuadVertex vCardOutliner2;
+	QuadVertex vCardBack2;
+	QuadVertex vPScale;
+    QuadVertex vCloseup;
+	QuadVertex vAttack;
+	QuadVertex vAttack2;
+	QuadVertex vAttack3;
+	QuadVertex vAttack4;
+	QuadVertex vHint;
+	QuadVertex vXyz;
+	QuadVertex vXyztrail;
+	QuadVertex vCXyz;
+	QuadVertex vFieldMzone_2[2][7];
+	std::array<std::array<std::array<std::array<QuadVertex, 8>, 2>, 2>, 2> vFieldSzone_2;
+	QuadVertex vLinkZone;
+	QuadVertex vLinkZone2;
+	////kdiy////////
 	QuadVertex vSymbol;
 	QuadVertex vNegate;
 	QuadVertex vChainNum;
