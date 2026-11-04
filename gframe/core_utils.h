@@ -68,9 +68,14 @@ private:
 	uint32_t position;
 	uint32_t alias;
 	uint32_t type;
-	uint32_t level;
-	uint32_t rank;
-	uint32_t link;
+	////////////kdiy///////
+	//uint32_t level;
+	//uint32_t rank;
+	//uint32_t link;
+	int32_t level;
+	int32_t rank;
+	int32_t link;
+	////////////kdiy///////
 	uint32_t attribute;
 	uint64_t race;
 	int32_t attack;
