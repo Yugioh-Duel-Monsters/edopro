@@ -6,6 +6,9 @@
 #include "game.h"
 #include "single_mode.h"
 #include "sound_manager.h"
+////kdiy////////
+#include <IGUIButton.h>
+////kdiy////////
 
 namespace ygo {
 
@@ -93,8 +96,19 @@ int ReplayMode::ReplayThread() {
 		mainGame->dInfo.current_player[1] = mainGame->dInfo.team2 - 1;
 	const auto& names = cur_replay.GetPlayerNames();
 	const auto first_oppo_player = names.begin() + mainGame->dInfo.team1;
-	mainGame->dInfo.selfnames.assign(names.begin(), first_oppo_player);
-	mainGame->dInfo.opponames.assign(first_oppo_player, names.end());
+    /////kdiy///////
+	// mainGame->dInfo.selfnames.assign(names.begin(), first_oppo_player);
+	// mainGame->dInfo.opponames.assign(first_oppo_player, names.end());
+	auto& names2 = cur_replay.playersC;
+    if(names2.empty() || names2.size() < 2) {
+        mainGame->dInfo.selfnames.assign(names.begin(), first_oppo_player);
+        mainGame->dInfo.opponames.assign(first_oppo_player, names.end());
+    } else {
+        auto oppo_player1 = names2.begin() + mainGame->dInfo.team1;
+        mainGame->dInfo.selfnames.assign(names2.begin(), oppo_player1);
+        mainGame->dInfo.opponames.assign(oppo_player1, names2.end());
+    }
+    /////kdiy///////
 	mainGame->dInfo.duel_params = cur_replay.params.duel_flags;
 	mainGame->dInfo.duel_field = mainGame->GetMasterRule(mainGame->dInfo.duel_params);
 	matManager.SetActiveVertices(mainGame->dInfo.HasFieldFlag(DUEL_3_COLUMNS_FIELD),
@@ -157,6 +171,10 @@ void ReplayMode::EndDuel() {
 		mainGame->stMessage->setText(gDataManager->GetSysString(1501).data());
 		if(mainGame->wCardSelect->isVisible())
 			mainGame->HideElement(mainGame->wCardSelect);
+        //////////kdiy/////////
+        for(int i = 0; i < 5; ++i)
+            mainGame->selectedcard[i]->setVisible(false);
+        //////////kdiy/////////
 		mainGame->PopupElement(mainGame->wMessage);
 		mainGame->actionSignal.Wait(lock);
 		mainGame->dInfo.isInDuel = false;
@@ -166,6 +184,25 @@ void ReplayMode::EndDuel() {
 		mainGame->dInfo.isHandTest = false;
 		mainGame->dInfo.isOldReplay = false;
 		mainGame->closeDuelWindow = true;
+        ////kdiy////////
+		mainGame->StopVideo(true);
+		if(mainGame->isEvent) {
+			mainGame->isEvent = false;
+			mainGame->cv->notify_one();
+			mainGame->chantsound.stop();
+			mainGame->chantmusic.stop();
+		}
+        mainGame->bodycharacter[0] = 0;
+        mainGame->bodycharacter[1] = 0;
+		for(int i = 0; i < 3; i++) {
+			mainGame->cutincharacter[0][i] = 0;
+			mainGame->cutincharacter[1][i] = 0;
+		}
+        mainGame->lpcharacter[0] = 0;
+        mainGame->lpcharacter[1] = 0;
+        gSoundManager->soundcount.clear();
+        mainGame->animecount.clear();
+		////kdiy////////
 		mainGame->closeDoneSignal.Wait(lock);
 		mainGame->ShowElement(mainGame->wReplay);
 		mainGame->SetMessageWindow();
@@ -186,6 +223,25 @@ void ReplayMode::Restart(bool refresh) {
 	mainGame->dField.Clear();
 	mainGame->dInfo.current_player[0] = 0;
 	mainGame->dInfo.current_player[1] = 0;
+    ////kdiy////////
+	mainGame->StopVideo(true);
+	if(mainGame->isEvent) {
+		mainGame->isEvent = false;
+		mainGame->cv->notify_one();
+		mainGame->chantsound.stop();
+		mainGame->chantmusic.stop();
+	}
+    mainGame->bodycharacter[0] = 0;
+    mainGame->bodycharacter[1] = 0;
+	for(int i = 0; i < 3; i++) {
+		mainGame->cutincharacter[0][i] = 0;
+		mainGame->cutincharacter[1][i] = 0;
+	}
+    mainGame->lpcharacter[0] = 0;
+    mainGame->lpcharacter[1] = 0;
+    gSoundManager->soundcount.clear();
+    mainGame->animecount.clear();
+	////kdiy////////
 	if(!mainGame->dInfo.isRelay) {
 		if(mainGame->dInfo.isFirst)
 			mainGame->dInfo.current_player[1] = mainGame->dInfo.team2 - 1;
