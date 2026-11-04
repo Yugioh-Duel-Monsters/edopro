@@ -2,6 +2,8 @@ name: YDM KCGCore Windows x64 integration build
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [master]
   push:
     branches:
       - ydm/kcgcore-x64-integration
