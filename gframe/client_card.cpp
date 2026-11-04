@@ -13,6 +13,15 @@ template <typename T>
 static inline bool IsDifferent(T& what, T _new) {
 	return std::exchange(what, _new) != what;
 }
+static std::wstring FormatKCGStat(int32_t value) {
+	if(value < 0)
+		return L"?";
+	if(value == 8888888)
+		return L"∞";
+	if(value == 9999999)
+		return L"(∞)";
+	return epro::to_wstring(value);
+}
 void ClientCard::SetCode(uint32_t new_code) {
 	if(!IsDifferent(code, new_code))
 		return;
@@ -50,18 +59,12 @@ void ClientCard::UpdateInfo(const CoreUtils::Query& query) {
 	}
 	if(query.flag & QUERY_ATTACK) {
 		if(IsDifferent(attack, query.attack) || atkstring.empty()) {
-			if(attack < 0) {
-				atkstring = L"?";
-			} else
-				atkstring = epro::to_wstring(attack);
+			atkstring = FormatKCGStat(attack);
 		}
 	}
 	if(query.flag & QUERY_DEFENSE) {
 		if(IsDifferent(defense, query.defense) || defstring.empty()) {
-			if(defense < 0) {
-				defstring = L"?";
-			} else
-				defstring = epro::to_wstring(defense);
+			defstring = FormatKCGStat(defense);
 		}
 	}
 	/*if(query.flag & QUERY_REASON_CARD) {
@@ -125,8 +128,8 @@ void ClientCard::UpdateInfo(const CoreUtils::Query& query) {
 		rscale = rrscale;
 		link_marker = rlink_marker;
 		lvstring = epro::format(L"L{}", level);
-		atkstring = attack < 0 ? L"?" : epro::to_wstring(attack);
-		defstring = defense < 0 ? L"?" : epro::to_wstring(defense);
+		atkstring = FormatKCGStat(attack);
+		defstring = FormatKCGStat(defense);
 		lscstring = epro::to_wstring(lscale);
 		rscstring = epro::to_wstring(rscale);
 	}
