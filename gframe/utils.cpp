@@ -551,6 +551,13 @@ namespace ygo {
 		createResourceDirAndLogIfFailure(ClearDirectory, EPRO_TEXT("pics/temp/"));
 		createResourceDirAndLogIfFailure(MakeDirectory, Replay::GetReplayFolder());
 		createResourceDirAndLogIfFailure(MakeDirectory, EPRO_TEXT("screenshots"));
+		//kdiy////
+        createResourceDirAndLogIfFailure(MakeDirectory, EPRO_TEXT("pics/closeup"));
+		createResourceDirAndLogIfFailure(MakeDirectory, EPRO_TEXT("hdpics"));
+		createResourceDirAndLogIfFailure(MakeDirectory, EPRO_TEXT("hdpics/jp"));
+		createResourceDirAndLogIfFailure(MakeDirectory, EPRO_TEXT("movies"));
+		createResourceDirAndLogIfFailure(MakeDirectory, EPRO_TEXT("movies/wallpaper"));
+		//kdiy////
 	}
 
 	std::vector<epro::path_string> Utils::FindFiles(epro::path_stringview path, const std::vector<epro::path_stringview>& extensions, int subdirectorylayers) {
@@ -599,13 +606,39 @@ namespace ygo {
 			if(list->isDirectory(i))
 				continue;
 			const auto name = list->getFullFileName(i);
-			if(std::count(name.data(), name.data() + name.size(), EPRO_TEXT('/')) > subdirectorylayers)
+			///kdiy///////////
+			// if(std::count(name.data(), name.data() + name.size(), EPRO_TEXT('/')) > subdirectorylayers)
+			// 	continue;
+           if(std::count(name.data(), name.data() + name.size(), EPRO_TEXT('/')) - std::count(path.data(), path.data() + path.size(), EPRO_TEXT('/')) > subdirectorylayers)
 				continue;
+			epro::path_string filename = Utils::ToPathString({ name.data(), name.size() });
+			if(filename.find(Utils::ToPathString(path)) == epro::path_string::npos)
+				continue;
+			///kdiy///////////
 			if(extensions.empty() || std::find(extensions.begin(), extensions.end(), Utils::GetFileExtension(name)) != extensions.end())
 				res.push_back(i);
 		}
 		return res;
 	}
+	///kdiy///////////
+	std::vector<epro::path_string> Utils::FindFileNames(irr::io::IFileArchive* archive, epro::path_stringview path, const std::vector<epro::path_stringview>& extensions, int subdirectorylayers) {
+        std::vector<epro::path_string> res;
+        auto list = archive->getFileList();
+        for(irr::u32 i = 0; i < list->getFileCount(); i++) {
+		    if(list->isDirectory(i))
+			    continue;
+		    const auto name = list->getFullFileName(i);
+		    if(std::count(name.data(), name.data() + name.size(), EPRO_TEXT('/')) - std::count(path.data(), path.data() + path.size(), EPRO_TEXT('/')) > subdirectorylayers)
+			    continue;
+			epro::path_string filename = Utils::ToPathString({ name.data(), name.size() });
+			if(filename.find(Utils::ToPathString(path)) == epro::path_string::npos)
+			    continue;
+		    if(extensions.empty() || std::find(extensions.begin(), extensions.end(), Utils::GetFileExtension(name)) != extensions.end())
+			    res.push_back(filename);
+	}
+	return res;
+	}
+	///kdiy///////////
 	irr::io::IReadFile* Utils::FindFileInArchives(epro::path_stringview path, epro::path_stringview name) {
 		for(auto& archive : archives) {
 			auto list = archive.archive->getFileList();
@@ -749,8 +782,17 @@ namespace ygo {
 			return false;
 		CreatePath(dest, EPRO_TEXT("./"));
 		irr::io::IFileArchive* archive = nullptr;
+		////////kdiy////////
+		//if(!filesystem->addFileArchive({ input.data(), static_cast<irr::u32>(input.size()) }, false, false, irr::io::EFAT_ZIP, "", &archive))
+		    //return false;
+		#if defined(Zip)
+		if(!filesystem->addFileArchive({ input.data(), static_cast<irr::u32>(input.size()) }, false, false, irr::io::EFAT_ZIP, Zip, &archive))
+		    return false;
+		#else
 		if(!filesystem->addFileArchive({ input.data(), static_cast<irr::u32>(input.size()) }, false, false, irr::io::EFAT_ZIP, "", &archive))
-			return false;
+		    return false;
+		#endif
+		////////kdiy////////		
 
 		archive->grab();
 		auto filelist = archive->getFileList();
