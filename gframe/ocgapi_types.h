@@ -22,7 +22,9 @@ typedef enum OCG_DuelCreationStatus {
 	OCG_DUEL_CREATION_NO_OUTPUT,
 	OCG_DUEL_CREATION_NOT_CREATED,
 	OCG_DUEL_CREATION_NULL_DATA_READER,
-	OCG_DUEL_CREATION_NULL_SCRIPT_READER
+	OCG_DUEL_CREATION_NULL_SCRIPT_READER,
+	OCG_DUEL_CREATION_INCOMPATIBLE_LUA_API,
+	OCG_DUEL_CREATION_NULL_RNG_SEED
 }OCG_DuelCreationStatus;
 
 typedef enum OCG_DuelStatus {
@@ -38,7 +40,10 @@ typedef struct OCG_CardData {
 	uint32_t alias;
 	uint16_t* setcodes;
 	uint32_t type;
-	uint32_t level;
+	//////////kdiy///////////
+	//uint32_t level;
+	int32_t level;
+	//////////kdiy///////////
 	uint32_t attribute;
 	uint64_t race;
 	int32_t attack;
@@ -46,6 +51,9 @@ typedef struct OCG_CardData {
 	uint32_t lscale;
 	uint32_t rscale;
 	uint32_t link_marker;
+	///////kdiy///////
+	uint32_t ot;
+	///////kdiy///////
 }OCG_CardData;
 
 typedef struct OCG_Player {
@@ -72,6 +80,9 @@ typedef struct OCG_DuelOptions {
 	void* payload3; /* relayed to errorHandler */
 	OCG_DataReaderDone cardReaderDone;
 	void* payload4; /* relayed to cardReaderDone */
+	//////zdiy/////
+	void* payload5;/* get cardData */
+	//////zdiy/////
 	uint8_t enableUnsafeLibraries;
 }OCG_DuelOptions;
 
