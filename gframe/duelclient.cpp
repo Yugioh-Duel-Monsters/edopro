@@ -3335,9 +3335,17 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
 		return true;
 	}
 	case MSG_SET: {
+		(void)BufferIO::Read<uint32_t>(pbuf);
+		CoreUtils::loc_info info = CoreUtils::ReadLocInfo(pbuf, mainGame->dInfo.compat_mode);
+		const auto player = mainGame->LocalPlayer(info.controler);
+		(void)mainGame->LocalPlayer(BufferIO::Read<uint8_t>(pbuf));
+		const auto settype = BufferIO::Read<uint8_t>(pbuf);
+		ClientCard* card = mainGame->dField.GetCard(player, info.location, info.sequence);
+		if(card) {
+			card->is_orica = settype == 1;
+			card->is_sanct = settype == 2;
+		}
 		Play(SoundManager::SFX::SET);
-		/*const auto code = BufferIO::Read<uint32_t>(pbuf);*/
-		/*CoreUtils::loc_info info = CoreUtils::ReadLocInfo(pbuf, mainGame->dInfo.compat_mode);*/
 		event_string = gDataManager->GetSysString(1601).data();
 		return true;
 	}
@@ -4068,24 +4076,63 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
 		ClientCard* pcard = mainGame->dField.GetCard(mainGame->LocalPlayer(info.controler), info.location, info.sequence);
 		if(!pcard)
 			return true;
+		const auto addtotext = BufferIO::Read<bool>(pbuf);
+		const auto cardtext = CompatRead<uint32_t, uint64_t>(pbuf);
+		const auto cardtext2 = CompatRead<uint32_t, uint64_t>(pbuf);
+		const auto cardtext3 = CompatRead<uint32_t, uint64_t>(pbuf);
+		const auto cardtext4 = CompatRead<uint32_t, uint64_t>(pbuf);
+		const auto replacetext = BufferIO::Read<uint32_t>(pbuf);
+		const auto addtofront = BufferIO::Read<bool>(pbuf);
+		std::wstring text;
+		if(addtotext && value > 0) {
+			auto append_desc = [&](uint64_t desc) {
+				if(!desc) return;
+				const auto description = gDataManager->GetDesc(desc, mainGame->dInfo.compat_mode);
+				if(replacetext)
+					text.append(epro::format(description, gDataManager->GetName(replacetext).data()));
+				else
+					text.append(description);
+			};
+			append_desc(value);
+			append_desc(cardtext);
+			append_desc(cardtext2);
+			append_desc(cardtext3);
+			append_desc(cardtext4);
+		}
 		if(chtype == CHINT_DESC_ADD) {
-			pcard->desc_hints[value]++;
+			if(addtotext && value > 0) {
+				if(pcard->text_hints_no[value] <= 0) {
+					if(addtofront) pcard->text_hints.insert(pcard->text_hints.begin(), text);
+					else pcard->text_hints.push_back(text);
+				}
+				pcard->text_hints_no[value]++;
+			} else {
+				pcard->desc_hints[value]++;
+			}
 		} else if(chtype == CHINT_DESC_REMOVE) {
-			pcard->desc_hints[value]--;
-			if(pcard->desc_hints[value] <= 0)
-				pcard->desc_hints.erase(value);
+			if(addtotext && value > 0) {
+				auto it = std::remove(pcard->text_hints.begin(), pcard->text_hints.end(), text);
+				pcard->text_hints.erase(it, pcard->text_hints.end());
+				if(pcard->text_hints_no[value] > 1) {
+					if(addtofront) pcard->text_hints.insert(pcard->text_hints.begin(), text);
+					else pcard->text_hints.push_back(text);
+				}
+				if(--pcard->text_hints_no[value] <= 0)
+					pcard->text_hints_no.erase(value);
+			} else {
+				if(pcard->desc_hints[value] > 0 && --pcard->desc_hints[value] <= 0)
+					pcard->desc_hints.erase(value);
+			}
 		} else {
 			pcard->cHint = chtype;
 			pcard->chValue = value;
 			if(chtype == CHINT_TURN) {
-				if(value == 0)
-					return true;
-				if(mainGame->dInfo.isCatchingUp)
+				if(value == 0 || mainGame->dInfo.isCatchingUp)
 					return true;
 				if(pcard->location & LOCATION_ONFIELD)
 					pcard->is_highlighting = true;
 				std::unique_lock<epro::mutex> lock(mainGame->gMutex);
-				mainGame->showcardcode = pcard->code;
+				mainGame->showcardcode = pcard->piccode > 0 ? pcard->piccode : pcard->code;
 				mainGame->showcarddif = 0;
 				mainGame->showcardp = (value & 0xffff) - 1;
 				mainGame->showcard = 6;
