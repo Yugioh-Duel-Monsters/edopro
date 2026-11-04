@@ -52,6 +52,9 @@ class ServerLobby {
 public:
 	static std::vector<RoomInfo> roomsVector;
 	static std::vector<ServerInfo> serversVector;
+	///kdiy////////
+	static std::vector<ServerInfo> serversVector2;
+	///kdiy////////
 	static bool IsKnownHost(epro::Host host);
 	static void RefreshRooms();
 	static bool HasRefreshedRooms();
