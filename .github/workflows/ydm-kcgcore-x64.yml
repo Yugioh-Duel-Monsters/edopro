@@ -55,10 +55,22 @@ jobs:
           git clone --depth 1 https://github.com/microsoft/vcpkg.git $root
           "VCPKG_ROOT=$root" | Out-File -FilePath $env:GITHUB_ENV -Append
           & "$root\bootstrap-vcpkg.bat" -disableMetrics
-          & "$root\vcpkg.exe" install fmt curl freetype sqlite3 libevent libgit2 libssh2 openssl libpng bzip2 zlib libjpeg-turbo nlohmann-json openal-soft libflac libvorbis --triplet x64-windows-static
-          if ($LASTEXITCODE -ne 0) { throw "Static client dependencies failed to install" }
-          & "$root\vcpkg.exe" install ffmpeg --triplet x64-windows
-          if ($LASTEXITCODE -ne 0) { throw "FFmpeg dependencies failed to install" }
+          $staticInstalled = $false
+          for ($attempt = 1; $attempt -le 3; $attempt++) {
+            Write-Host "Installing static client dependencies (attempt $attempt of 3)"
+            & "$root\vcpkg.exe" install fmt curl freetype sqlite3 libevent libgit2 libssh2 openssl libpng bzip2 zlib libjpeg-turbo nlohmann-json openal-soft libflac libvorbis --triplet x64-windows-static
+            if ($LASTEXITCODE -eq 0) { $staticInstalled = $true; break }
+            if ($attempt -lt 3) { Start-Sleep -Seconds 15 }
+          }
+          if (-not $staticInstalled) { throw "Static client dependencies failed after 3 attempts" }
+          $ffmpegInstalled = $false
+          for ($attempt = 1; $attempt -le 3; $attempt++) {
+            Write-Host "Installing FFmpeg dependencies (attempt $attempt of 3)"
+            & "$root\vcpkg.exe" install ffmpeg --triplet x64-windows
+            if ($LASTEXITCODE -eq 0) { $ffmpegInstalled = $true; break }
+            if ($attempt -lt 3) { Start-Sleep -Seconds 15 }
+          }
+          if (-not $ffmpegInstalled) { throw "FFmpeg dependencies failed after 3 attempts" }
           & "$root\vcpkg.exe" integrate install
 
       - name: Stage FFmpeg headers, import libraries and runtime DLLs
