@@ -142,7 +142,10 @@ jobs:
         run: |
           & msbuild.exe -m -p:Configuration=Release -p:Platform=x64 .\build\ygo.sln -t:ygoprodll -verbosity:minimal -p:EchoOff=true
           if ($LASTEXITCODE -ne 0) { throw "EDOPro x64 client build failed" }
-          if (-not (Test-Path "bin/x64/release/ygoprodll.exe")) { throw "EDOPro x64 executable missing" }
+          $builtExe = "bin/x64/release/Edopro-KCG.exe"
+          if (-not (Test-Path $builtExe)) { throw "EDOPro x64 executable missing: expected $builtExe" }
+          Copy-Item $builtExe "bin/x64/release/ygoprodll.exe" -Force
+          if (-not (Test-Path "bin/x64/release/ygoprodll.exe")) { throw "Failed to stage executable as ygoprodll.exe" }
 
       - name: Assemble minimal client and core package
         shell: pwsh
